@@ -1,10 +1,10 @@
-import dotenv from 'dotenv';
+import 'dotenv/config';
 // Chargement des variables d'environnement
-dotenv.config();
 
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
+
 
 // === Imports routes souche ===
 import authRoutes from './src/routes/auth.routes.js';
@@ -14,7 +14,6 @@ import newsRoutes from './src/routes/news.routes.js';
 
 // === Imports routes modules ===
 // import visionRoutes from './src/modules/vision/vision.routes.js';
-
 // Création de l'app
 const app = express();
 const PORT = process.env.PORT || 5000;

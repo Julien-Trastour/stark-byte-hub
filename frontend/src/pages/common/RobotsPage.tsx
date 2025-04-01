@@ -1,10 +1,9 @@
-// src/pages/common/RobotsPage.tsx
 import { useEffect, useState } from "react";
 import { Plus, Cpu } from "lucide-react";
 import { useNavigate } from "react-router";
 import { useAtom, useSetAtom } from "jotai";
 import { robotsAtom, fetchRobotsAtom } from "../../store/robotAtom";
-import { Robot } from "../../types/robot";
+import type { Robot } from "../../types/robot";
 import RobotCard from "../../components/robots/RobotCard";
 import AlertList from "../../components/robots/AlertList";
 import LinkRobotModal from "../../components/robots/LinkRobotModal";
@@ -39,7 +38,7 @@ export default function RobotsPage() {
 			}
 		};
 		load();
-	}, []);
+	}, [fetchRobots]);	
 
 	useEffect(() => {
 		if (toast) {
@@ -71,14 +70,10 @@ export default function RobotsPage() {
 					<h1 className="text-2xl font-bold flex items-center gap-2 text-white">
 						<Cpu size={24} /> Mes robots
 					</h1>
-					<Button
-						onClick={() => setShowModal(true)}
-						className="group relative overflow-hidden rounded-xl border border-[#00aaff] px-4 py-2 text-sm font-medium text-[#00aaff] hover:bg-[#00aaff] hover:text-[#121212] transition-colors"
-					>
-						<span className="relative z-10 flex items-center gap-1">
+					<Button variant="neon" onClick={() => setShowModal(true)}>
+						<span className="flex items-center gap-1">
 							<Plus size={16} /> Ajouter un robot
 						</span>
-						<span className="absolute inset-0 bg-[#00aaff]/10 blur-md"></span>
 					</Button>
 				</div>
 
@@ -107,7 +102,7 @@ export default function RobotsPage() {
 								/>
 							))}
 							{Array.from({ length: 8 - Math.min(filteredRobots.length, 8) }).map((_, i) => (
-								<div key={`placeholder-${i}`} className="invisible" />
+							<div key={`robot-placeholder-${i + filteredRobots.length}`} className="invisible" />
 							))}
 						</>
 					) : (
@@ -125,6 +120,7 @@ export default function RobotsPage() {
 								Activité de {selectedRobot.name || "Robot"}
 							</h2>
 							<button
+								type="button"
 								onClick={() => setSelectedRobot(null)}
 								className="text-sm text-red-400 hover:text-red-300"
 							>
