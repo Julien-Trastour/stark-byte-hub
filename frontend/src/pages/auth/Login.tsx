@@ -74,7 +74,7 @@ export default function Login() {
 					className="group relative w-full overflow-hidden rounded-md border border-[#00aaff] py-3 font-semibold tracking-wide text-[#00aaff] transition-colors hover:bg-[#00aaff] hover:text-[#121212]"
 				>
 					<span className="relative z-10">SE CONNECTER</span>
-					<span className="absolute inset-0 h-full w-full bg-[#00aaff]/10 blur-md"></span>
+					<span className="absolute inset-0 h-full w-full bg-[#00aaff]/10 blur-md" />
 				</button>
 
 				<div className="text-center">

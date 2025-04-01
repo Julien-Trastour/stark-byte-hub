@@ -52,12 +52,13 @@ export default function AdminNewsPage() {
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-white">Gestion des actualités</h1>
-        <Button 
-            variant='neon'
-            onClick={() => {
-          setEditingNews(null)
-          setModalOpen(true)
-        }}>
+        <Button
+          variant="neon"
+          onClick={() => {
+            setEditingNews(null)
+            setModalOpen(true)
+          }}
+        >
           <Plus size={16} /> Ajouter une actu
         </Button>
       </div>
@@ -86,7 +87,7 @@ export default function AdminNewsPage() {
             return (
               <div
                 key={news.id}
-                className="relative bg-[#1e1e1e] border border-[#2a2a2a] rounded-lg p-4 shadow-md"
+                className="rounded-lg border-l-4 border-[#00aaff]/30 bg-[#1e1e1e] p-6 shadow-lg shadow-[#00aaff]/10"
               >
                 <div className="flex flex-wrap gap-2 mb-2">
                   {news.tags.map((tag) => (
@@ -99,15 +100,15 @@ export default function AdminNewsPage() {
                   ))}
                 </div>
 
-                <h3 className="text-white font-bold text-lg">{news.title}</h3>
+                <h3 className="text-white font-bold text-lg mb-1">{news.title}</h3>
 
-                <p className="text-gray-400 text-sm line-clamp-3">{plainText}</p>
+                <p className="text-gray-400 text-sm mb-2 line-clamp-3">{plainText}</p>
 
-                <p className="text-gray-500 text-xs mt-1">
+                <p className="text-gray-500 text-xs mb-3">
                   {new Date(news.date).toLocaleDateString('fr-FR')}
                 </p>
 
-                <div className="flex gap-2 mt-3">
+                <div className="flex gap-2">
                   <Button
                     variant="outline"
                     className="flex-1 text-[#00aaff] border-[#00aaff]/40 hover:bg-[#00aaff] hover:text-black"

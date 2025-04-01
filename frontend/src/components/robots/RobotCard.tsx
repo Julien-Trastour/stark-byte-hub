@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { Robot } from '../../types/robot'
+import type { Robot } from '../../types/robot'
 import { Button } from '../ui'
 
 type Props = {

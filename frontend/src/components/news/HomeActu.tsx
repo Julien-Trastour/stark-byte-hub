@@ -1,4 +1,4 @@
-import { NewsItem } from "../../types/news";
+import type { NewsItem } from "../../types/news";
 
 type Props = {
 	news: NewsItem;
@@ -31,21 +31,21 @@ export default function HomeActu({ news, onOpen }: Props) {
 	});
 
 	return (
-		<div className="relative bg-[#1e1e1e] border border-[#2a2a2a] rounded-lg p-4 shadow-md">
+		<div className="rounded-lg border-l-4 border-[#00aaff]/30 bg-[#1e1e1e] p-6 shadow-lg shadow-[#00aaff]/10">
 			{/* Image (si dispo) */}
 			{news.image && (
 				<img
 					src={news.image}
 					alt={news.title}
-					className="w-full h-32 object-cover rounded-md mb-3"
+					className="w-full h-32 object-cover rounded-md mb-4"
 				/>
 			)}
 
 			{/* Tags */}
 			<div className="flex flex-wrap gap-2 mb-2">
-				{news.tags.map((tag, i) => (
+				{news.tags.map((tag) => (
 					<span
-						key={i}
+						key={tag}
 						className="capitalize text-xs font-medium text-[#00aaff] bg-[#00aaff]/10 px-2 py-0.5 rounded-full"
 					>
 						{tag}
@@ -54,19 +54,20 @@ export default function HomeActu({ news, onOpen }: Props) {
 			</div>
 
 			{/* Titre */}
-			<h3 className="text-white font-bold text-lg">{news.title}</h3>
+			<h3 className="text-white font-bold text-lg mb-1">{news.title}</h3>
 
 			{/* Aperçu texte nettoyé */}
-			<p className="text-gray-400 text-sm line-clamp-3">{preview}</p>
+			<p className="text-gray-400 text-sm mb-2 line-clamp-3">{preview}</p>
 
 			{/* Date */}
-			<p className="text-gray-500 text-xs mt-2">{formattedDate}</p>
+			<p className="text-gray-500 text-xs mb-3">{formattedDate}</p>
 
 			{/* Bouton d'ouverture */}
 			<button
+				type="button"
 				onClick={() => onOpen(news)}
 				aria-label={`Voir plus sur : ${news.title}`}
-				className="mt-3 inline-block text-sm text-[#00aaff] hover:underline"
+				className="text-sm text-[#00aaff] hover:underline"
 			>
 				Voir plus →
 			</button>

@@ -7,6 +7,8 @@ import ProtectedRoute from "../components/ProtectedRoute";
 import DashboardLayout from "../components/layout/DashboardLayout";
 import HomePage from "../pages/common/HomePage";
 import RobotsPage from "../pages/common/RobotsPage";
+import RobotDetailsPage from "../pages/common/RobotDetailsPage";
+import RobotControlPage from "../pages/common/RobotControlPage";
 
 // Pages Auth
 import Login from "../pages/auth/Login";
@@ -32,6 +34,8 @@ const router = createBrowserRouter(
 			>
 				<Route index element={<HomePage />} />
 				<Route path="robots" element={<RobotsPage />} />
+				<Route path="robots/:id" element={<RobotDetailsPage />} />
+				<Route path="robots/:id/control" element={<RobotControlPage />} />
 
 				{/* ⚙️ Routes Admin */}
 				<Route path="admin/news" element={<AdminNewsPage />} />

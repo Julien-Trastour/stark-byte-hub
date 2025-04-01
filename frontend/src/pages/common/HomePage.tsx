@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { Cpu, AlertTriangle, Clock } from "lucide-react";
-import { useAtom } from "jotai";
+import { useAtom, useAtomValue } from "jotai";
 import { fetchNews } from "../../services/newsService";
 import { newsAtom } from "../../store/newsAtom";
-import { NewsItem } from "../../types/news";
+import { robotsAtom } from "../../store/robotAtom";
+import type { NewsItem } from "../../types/news";
 import HomeActu from "../../components/news/HomeActu";
 import NewsPreviewModal from "../../components/news/NewsPreviewModal";
 import ErrorBoundary from "../../components/common/ErrorBoundary";
@@ -14,11 +15,7 @@ export default function HomePage() {
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState("");
 	const [selectedNews, setSelectedNews] = useState<NewsItem | null>(null);
-
-	const robots = [
-		{ name: "Arachnobot Julien", serial: "SBA-M1-V1-25032901" },
-		{ name: "Hypérion", serial: "SBA-M1-V1-25032842" },
-	];
+	const robots = useAtomValue(robotsAtom);
 
 	const alerts = [
 		"Mise à jour en attente",
@@ -37,7 +34,6 @@ export default function HomePage() {
 				setLoading(false);
 				return;
 			}
-
 			try {
 				const data = await fetchNews();
 				setNews(data);
@@ -69,10 +65,12 @@ export default function HomePage() {
 						>
 							{robots.length > 0 ? (
 								<ul className="space-y-1">
-									{robots.map((robot, i) => (
-										<li key={i}>
+									{robots.map((robot) => (
+										<li key={robot.id}>
 											{robot.name}{" "}
-											<span className="text-gray-500 text-sm">({robot.serial})</span>
+											<span className="text-gray-500 text-sm">
+												({robot.serialNumber})
+											</span>
 										</li>
 									))}
 								</ul>
@@ -90,8 +88,8 @@ export default function HomePage() {
 						>
 							{alerts.length > 0 ? (
 								<ul className="space-y-1">
-									{alerts.map((a, i) => (
-										<li key={i}>• {a}</li>
+									{alerts.map((alert) => (
+										<li key={alert}>• {alert}</li>
 									))}
 								</ul>
 							) : (
@@ -106,9 +104,15 @@ export default function HomePage() {
 							title="Temps d'activité"
 							count="Cette semaine"
 						>
-							<p>Semaine : <span className="font-semibold">{activity.week}</span></p>
-							<p>Mois : <span className="font-semibold">{activity.month}</span></p>
-							<p>Année : <span className="font-semibold">{activity.year}</span></p>
+							<p>
+								Semaine : <span className="font-semibold">{activity.week}</span>
+							</p>
+							<p>
+								Mois : <span className="font-semibold">{activity.month}</span>
+							</p>
+							<p>
+								Année : <span className="font-semibold">{activity.year}</span>
+							</p>
 						</StatCard>
 					</div>
 				</section>
@@ -127,8 +131,8 @@ export default function HomePage() {
 						</p>
 					) : (
 						<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-							{news.map((item, idx) => (
-								<HomeActu key={idx} news={item} onOpen={setSelectedNews} />
+							{news.map((item) => (
+								<HomeActu key={item.id} news={item} onOpen={setSelectedNews} />
 							))}
 						</div>
 					)}
