@@ -1,0 +1,191 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String  @id @default(uuid())
+  email     String  @unique
+  password  String
+  firstName String
+  lastName  String
+  address   String?
+  address2  String?
+  zipCode   String?
+  city      String?
+  country   String?
+
+  roleId String
+  role   Role   @relation(fields: [roleId], references: [id])
+
+  robots              Robot[]
+  passwordResetTokens PasswordResetToken[]
+  userModules         UserModule[] // Modules activés par l’utilisateur
+}
+
+enum RoleName {
+  user
+  admin
+  superadmin
+  technicien
+}
+
+model Role {
+  id   String    @id @default(uuid())
+  name RoleName  @unique
+
+  users User[]
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model Robot {
+  id           String  @id @default(uuid())
+  name         String?
+  serialNumber String  @unique
+  linkKey      String
+  model        String
+  firmware     String?
+  color        String
+  controllable Boolean @default(true)
+  imageUrl     String?
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id])
+
+  commands Command[]
+  sensors  SensorData[]
+  logs     Log[]
+
+  patrolRoutes PatrolRoute[]
+  mappedAreas  MappedArea[]
+
+  commissionedAt DateTime? // Date de mise en service
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+model Command {
+  id        String   @id @default(uuid())
+  type      String
+  payload   Json
+  createdAt DateTime @default(now())
+
+  robotId String
+  robot   Robot  @relation(fields: [robotId], references: [id])
+}
+
+model SensorData {
+  id        String   @id @default(uuid())
+  type      String
+  value     Float
+  unit      String
+  timestamp DateTime @default(now())
+
+  robotId String
+  robot   Robot  @relation(fields: [robotId], references: [id])
+}
+
+model Log {
+  id        String   @id @default(uuid())
+  type      String
+  message   String
+  createdAt DateTime @default(now())
+
+  robotId String
+  robot   Robot  @relation(fields: [robotId], references: [id])
+}
+
+model News {
+  id          String   @id @default(uuid())
+  title       String
+  description String // Contenu Markdown (converti depuis éditeur riche)
+  tags        String[]
+  date        DateTime @default(now())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Module {
+  id                String   @id @default(uuid())
+  moduleName        String   @unique
+  moduleDescription String
+  moduleVersion     String
+  isPublic          Boolean  @default(false)
+  category          String?
+  icon              String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  userModules UserModule[]
+}
+
+model UserModule {
+  id       String  @id @default(uuid())
+  userId   String
+  moduleId String
+  enabled  Boolean @default(true)
+
+  user   User   @relation(fields: [userId], references: [id])
+  module Module @relation(fields: [moduleId], references: [id])
+
+  @@unique([userId, moduleId])
+}
+
+model PatrolRoute {
+  id          String  @id @default(uuid())
+  name        String
+  description String?
+  schedule    String
+  robotId     String
+  robot       Robot   @relation(fields: [robotId], references: [id])
+
+  mapId String?
+  map   MappedArea? @relation(fields: [mapId], references: [id])
+
+  points    PatrolPoint[]
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+}
+
+model PatrolPoint {
+  id      String      @id @default(uuid())
+  routeId String
+  route   PatrolRoute @relation(fields: [routeId], references: [id])
+
+  order       Int
+  label       String
+  latitude    Float?
+  longitude   Float?
+  room        String?
+  durationSec Int
+
+  createdAt DateTime @default(now())
+}
+
+model MappedArea {
+  id         String  @id @default(uuid())
+  name       String
+  type       String // "2D" | "3D"
+  imageUrl   String?
+  mapDataUrl String?
+  robotId    String
+  robot      Robot   @relation(fields: [robotId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  patrolRoutes PatrolRoute[]
+}
