@@ -1,0 +1,26 @@
+@import "tailwindcss";
+
+/* Scrollbar Stark Byte style */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #00aaff #1e1e1e;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1e1e1e;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #00aaff;
+  border-radius: 8px;
+  border: 2px solid #1e1e1e;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: #33ccff;
+}

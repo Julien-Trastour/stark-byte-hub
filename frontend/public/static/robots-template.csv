@@ -1,0 +1,3 @@
+serialNumber,linkKey,model,firmware,color,controllable
+SBA-M1-V1-25032901,ABC12345,SBA-01,v1.0.2,black,true
+SBA-M1-V1-25032902,XYZ67890,SBA-02,v1.0.3,blue,false

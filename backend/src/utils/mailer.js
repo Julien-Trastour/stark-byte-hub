@@ -1,9 +1,14 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 import nodemailer from 'nodemailer';
 import { showError } from './showError.js';
+import { setDefaultResultOrder } from 'node:dns';
+setDefaultResultOrder('ipv4first');
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_PORT),
+  port: process.env.SMTP_PORT,
   secure: true,
   auth: {
     user: process.env.SMTP_USER,

@@ -20,8 +20,6 @@ import {
 
 /**
  * @route POST /auth/register
- * @param {import('express').Request} req
- * @param {import('express').Response} res
  */
 export const register = async (req, res) => {
   try {
@@ -60,11 +58,7 @@ export const register = async (req, res) => {
       country,
     });
 
-    const { subject, html, headers } = getEmailTemplate('welcome', {
-      firstName: user.firstName,
-    });
-    await sendMail(email, subject, html, headers);
-
+    // Répondre avant d’envoyer l’email
     const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
       expiresIn: '7d',
     });
@@ -74,9 +68,18 @@ export const register = async (req, res) => {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
-        maxAge: 1000 * 60 * 60 * 24 * 7, // 7 jours
+        maxAge: 1000 * 60 * 60 * 24 * 7,
       })
       .json({ user });
+
+    // Envoi de l’email de bienvenue en arrière-plan
+    const { subject, html, headers } = getEmailTemplate('welcome', {
+      firstName: user.firstName,
+    });
+    sendMail(email, subject, html, headers).catch((err) => {
+      console.error('Erreur lors de l’envoi de l’email de bienvenue :', err);
+    });
+
   } catch (err) {
     res.status(500).json({ error: showError(err) });
   }
@@ -84,8 +87,6 @@ export const register = async (req, res) => {
 
 /**
  * @route POST /auth/login
- * @param {import('express').Request} req
- * @param {import('express').Response} res
  */
 export const login = async (req, res) => {
   try {
@@ -120,8 +121,6 @@ export const login = async (req, res) => {
 
 /**
  * @route POST /auth/logout
- * @param {import('express').Request} req
- * @param {import('express').Response} res
  */
 export const logout = (req, res) => {
   res.clearCookie('token').json({ message: 'Déconnecté avec succès.' });
@@ -129,8 +128,6 @@ export const logout = (req, res) => {
 
 /**
  * @route PATCH /auth/profile
- * @param {import('express').Request} req
- * @param {import('express').Response} res
  */
 export const updateProfile = async (req, res) => {
   try {
@@ -143,8 +140,6 @@ export const updateProfile = async (req, res) => {
 
 /**
  * @route POST /auth/forgot-password
- * @param {import('express').Request} req
- * @param {import('express').Response} res
  */
 export const forgotPassword = async (req, res) => {
   const { email } = req.body;
@@ -152,12 +147,17 @@ export const forgotPassword = async (req, res) => {
 
   try {
     const user = await findUserByEmail(email);
-    if (!user) return res.status(404).json({ error: 'Utilisateur non trouvé.' });
+    if (!user) {
+      // On renvoie quand même un message générique
+      return res.json({ message: 'Si l’adresse existe, un email a été envoyé.' });
+    }
 
     const token = crypto.randomBytes(32).toString('hex');
     const expiresAt = new Date(Date.now() + 1000 * 60 * 30); // 30 min
 
     await createResetToken(user.id, token, expiresAt);
+
+    res.json({ message: 'Si l’adresse existe, un email a été envoyé.' });
 
     const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
     const { subject, html, headers } = getEmailTemplate('resetPassword', {
@@ -165,9 +165,10 @@ export const forgotPassword = async (req, res) => {
       resetLink,
     });
 
-    await sendMail(email, subject, html, headers);
+    sendMail(email, subject, html, headers).catch((err) => {
+      console.error('Erreur lors de l’envoi de l’email de réinitialisation :', err);
+    });
 
-    res.json({ message: 'Email envoyé (si l’adresse existe).' });
   } catch (err) {
     res.status(500).json({ error: showError(err) });
   }
@@ -175,8 +176,6 @@ export const forgotPassword = async (req, res) => {
 
 /**
  * @route POST /auth/reset-password
- * @param {import('express').Request} req
- * @param {import('express').Response} res
  */
 export const resetPassword = async (req, res) => {
   const { token, newPassword } = req.body;

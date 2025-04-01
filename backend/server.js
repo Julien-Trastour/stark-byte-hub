@@ -1,5 +1,8 @@
-import express from 'express';
 import dotenv from 'dotenv';
+// Chargement des variables d'environnement
+dotenv.config();
+
+import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 
@@ -11,9 +14,6 @@ import newsRoutes from './src/routes/news.routes.js';
 
 // === Imports routes modules ===
 // import visionRoutes from './src/modules/vision/vision.routes.js';
-
-// Chargement des variables d'environnement
-dotenv.config();
 
 // Création de l'app
 const app = express();
