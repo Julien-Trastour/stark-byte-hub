@@ -14,6 +14,10 @@ import Register from "../pages/auth/Register";
 import ForgotPassword from "../pages/auth/ForgotPassword";
 import ResetPassword from "../pages/auth/ResetPassword";
 
+// Pages Admin
+import AdminNewsPage from "../pages/admin/AdminNewsPage";
+import AdminRobotsPage from "../pages/admin/AdminRobotsPage";
+
 const router = createBrowserRouter(
 	createRoutesFromElements(
 		<>
@@ -28,6 +32,10 @@ const router = createBrowserRouter(
 			>
 				<Route index element={<HomePage />} />
 				<Route path="robots" element={<RobotsPage />} />
+
+				{/* ⚙️ Routes Admin */}
+				<Route path="admin/news" element={<AdminNewsPage />} />
+				<Route path="admin/robots" element={<AdminRobotsPage />} />
 			</Route>
 
 			{/* 🌐 Pages publiques */}
@@ -36,7 +44,7 @@ const router = createBrowserRouter(
 			<Route path="/forgot-password" element={<ForgotPassword />} />
 			<Route path="/reset-password" element={<ResetPassword />} />
 		</>
-	),
+	)
 );
 
 export default router;

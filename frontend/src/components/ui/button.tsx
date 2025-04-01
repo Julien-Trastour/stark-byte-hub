@@ -16,12 +16,12 @@ export function Button({ variant = 'default', className = '', children, ...props
 
   const blurOverlay =
     variant === 'neon' ? (
-      <span className="absolute inset-0 h-full w-full bg-[#00aaff]/10 blur-md"></span>
+      <span className="absolute flex items-center justify-center inset-0 h-full w-full bg-[#00aaff]/10 blur-md" />
     ) : null;
 
   return (
     <button {...props} className={clsx(base, variants[variant], className)}>
-      <span className="relative z-10">{children}</span>
+      <span className="relative z-10 inline-flex items-center gap-2">{children}</span>
       {blurOverlay}
     </button>
   );

@@ -1,8 +1,8 @@
-import { NewsItem } from "../types/news";
+import type { NewsItem } from "../types/news";
 import { newsAtom } from "../store/newsAtom";
 import { getDefaultStore } from "jotai";
 
-const BASE_URL = "http://localhost:5000";
+const BASE_URL = import.meta.env.VITE_API_URL
 const store = getDefaultStore();
 
 const handleError = async (res: Response, fallbackMsg: string) => {

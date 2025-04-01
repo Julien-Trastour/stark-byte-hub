@@ -1,6 +1,6 @@
 import { atom } from 'jotai';
 import * as robotService from '../services/robotService';
-import { Robot, LinkRobotPayload, CreateRobotPayload, UpdateRobotPayload } from '../types/robot';
+import type { Robot, LinkRobotPayload, CreateRobotPayload, UpdateRobotPayload } from '../types/robot';
 
 /* ============================================================================
 // Atom principal qui gère l'état de la liste des robots
@@ -83,3 +83,10 @@ export const deleteRobotAtom = atom(
     }
   }
 );
+
+import { fetchAllRobots } from '../services/robotService';
+
+export const fetchAllRobotsAtom = atom(null, async (_, set) => {
+  const all = await fetchAllRobots();
+  set(robotsAtom, all);
+});
