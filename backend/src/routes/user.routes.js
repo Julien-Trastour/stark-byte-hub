@@ -8,8 +8,8 @@ import {
   updateOwnProfile,
   updatePassword,
 } from '../controllers/user.controller.js';
-import { requireAuth } from '../middlewares/auth.middleware.js';
-import { isAdmin } from '../middlewares/admin.middleware.js';
+import { requireSession } from '../middlewares/session.middleware.js';
+import { hasPermission } from '../middlewares/hasPermission.middleware.js';
 
 const router = express.Router();
 
@@ -20,7 +20,7 @@ const router = express.Router();
  *   description: Gestion des utilisateurs
  */
 
-router.use(requireAuth);
+router.use(requireSession);
 
 /**
  * @swagger
@@ -96,30 +96,27 @@ router.patch('/me', updateOwnProfile);
  */
 router.patch('/password', updatePassword);
 
-// =============== ADMIN ONLY ===============
-router.use(isAdmin);
-
 /**
  * @swagger
  * /users:
  *   get:
- *     summary: Liste tous les utilisateurs (admin uniquement)
+ *     summary: Liste tous les utilisateurs (requiert la permission "view_users")
  *     tags: [Users]
  *     security:
  *       - cookieAuth: []
  *     responses:
  *       200:
  *         description: Liste des utilisateurs
- *       401:
- *         description: Non autorisé
+ *       403:
+ *         description: Permission refusée
  */
-router.get('/', getAllUsers);
+router.get('/', hasPermission('view_users'), getAllUsers);
 
 /**
  * @swagger
  * /users/{id}:
  *   get:
- *     summary: Récupère un utilisateur par ID (admin uniquement)
+ *     summary: Récupère un utilisateur par ID (requiert la permission "view_users")
  *     tags: [Users]
  *     security:
  *       - cookieAuth: []
@@ -134,14 +131,16 @@ router.get('/', getAllUsers);
  *         description: Utilisateur trouvé
  *       404:
  *         description: Utilisateur non trouvé
+ *       403:
+ *         description: Permission refusée
  */
-router.get('/:id', getUserById);
+router.get('/:id', hasPermission('view_users'), getUserById);
 
 /**
  * @swagger
  * /users/{id}:
  *   patch:
- *     summary: Met à jour un utilisateur par ID (admin uniquement)
+ *     summary: Met à jour un utilisateur par ID (requiert la permission "edit_users")
  *     tags: [Users]
  *     security:
  *       - cookieAuth: []
@@ -167,14 +166,16 @@ router.get('/:id', getUserById);
  *         description: Utilisateur mis à jour
  *       404:
  *         description: Utilisateur non trouvé
+ *       403:
+ *         description: Permission refusée
  */
-router.patch('/:id', updateUser);
+router.patch('/:id', hasPermission('edit_users'), updateUser);
 
 /**
  * @swagger
  * /users/{id}:
  *   delete:
- *     summary: Supprime un utilisateur par ID (admin uniquement)
+ *     summary: Supprime un utilisateur par ID (requiert la permission "delete_users")
  *     tags: [Users]
  *     security:
  *       - cookieAuth: []
@@ -189,7 +190,9 @@ router.patch('/:id', updateUser);
  *         description: Utilisateur supprimé
  *       404:
  *         description: Utilisateur non trouvé
+ *       403:
+ *         description: Permission refusée
  */
-router.delete('/:id', deleteUser);
+router.delete('/:id', hasPermission('delete_users'), deleteUser);
 
 export default router;

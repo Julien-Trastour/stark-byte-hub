@@ -1,15 +1,19 @@
 import { RobotModel } from '../models/robot.model.js';
 import prisma from '../utils/db.js';
 import { showError } from '../utils/showError.js';
+import { logAuditAction } from '../utils/logAudit.js';
 
 /**
  * @namespace RobotController
- * @description Contrôleur principal des robots
+ * @description Contrôleur principal pour la gestion des robots
  */
 export const RobotController = {
   /**
    * @route GET /robots
    * @access Utilisateur connecté
+   * @description Récupère tous les robots liés à l'utilisateur connecté
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
    */
   getAllByUser: async (req, res) => {
     try {
@@ -22,11 +26,14 @@ export const RobotController = {
 
   /**
    * @route GET /robots/all
-   * @access Admin uniquement
+   * @access Permission : view_all_robots
+   * @description Récupère tous les robots existants en base (admin uniquement)
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
    */
   getAll: async (req, res) => {
-    if (req.user.role?.name !== 'admin') {
-      return res.status(403).json({ error: 'Accès refusé.' });
+    if (!req.user.role?.permissions.includes('view_all_robots')) {
+      return res.status(403).json({ error: 'Permission requise.' });
     }
 
     try {
@@ -39,15 +46,18 @@ export const RobotController = {
 
   /**
    * @route GET /robots/:id
-   * @access Admin ou Propriétaire
+   * @access Propriétaire ou permission "*"
+   * @description Récupère le détail d'un robot spécifique
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
    */
   getOne: async (req, res) => {
     try {
       const robot = await RobotModel.getById(req.params.id);
-      const isAdmin = req.user.role?.name === 'admin';
       const isOwner = robot?.userId === req.user.id;
+      const hasRight = req.user.role?.permissions.includes('*') || isOwner;
 
-      if (!robot || (!isAdmin && !isOwner)) {
+      if (!robot || !hasRight) {
         return res.status(404).json({ error: 'Robot introuvable ou accès refusé.' });
       }
 
@@ -59,11 +69,14 @@ export const RobotController = {
 
   /**
    * @route POST /robots
-   * @access Admin uniquement
+   * @access Permission : create_robot
+   * @description Crée un nouveau robot
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
    */
   create: async (req, res) => {
-    if (req.user.role?.name !== 'admin') {
-      return res.status(403).json({ error: 'Seul un administrateur peut créer un robot.' });
+    if (!req.user.role?.permissions.includes('create_robot')) {
+      return res.status(403).json({ error: 'Permission requise pour créer un robot.' });
     }
 
     const { serialNumber, linkKey, firmware, color, controllable, model } = req.body;
@@ -82,6 +95,12 @@ export const RobotController = {
         model,
       });
 
+      await logAuditAction(req.user.id, 'create_robot', {
+        robotId: robot.id,
+        serialNumber: robot.serialNumber,
+        model,
+      });
+
       res.status(201).json(robot);
     } catch (err) {
       res.status(500).json({ error: showError(err) });
@@ -90,11 +109,14 @@ export const RobotController = {
 
   /**
    * @route POST /robots/import
-   * @access Admin uniquement
+   * @access Permission : import_robots
+   * @description Importe plusieurs robots depuis un tableau JSON
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
    */
   importMany: async (req, res) => {
-    if (req.user.role?.name !== 'admin') {
-      return res.status(403).json({ error: 'Accès refusé.' });
+    if (!req.user.role?.permissions.includes('import_robots')) {
+      return res.status(403).json({ error: 'Permission refusée pour l’import.' });
     }
 
     const robots = req.body;
@@ -123,6 +145,11 @@ export const RobotController = {
         try {
           const robot = await RobotModel.create(data);
           created.push(robot);
+
+          await logAuditAction(req.user.id, 'import_robot', {
+            robotId: robot.id,
+            serialNumber: robot.serialNumber,
+          });
         } catch {
           ignored.push(raw);
         }
@@ -142,6 +169,9 @@ export const RobotController = {
   /**
    * @route POST /robots/link
    * @access Utilisateur connecté
+   * @description Lie un robot existant à l’utilisateur via serialNumber + linkKey
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
    */
   linkToUser: async (req, res) => {
     const { serialNumber, linkKey, name } = req.body;
@@ -165,6 +195,11 @@ export const RobotController = {
         },
       });
 
+      await logAuditAction(req.user.id, 'link_robot', {
+        robotId: updated.id,
+        serialNumber: updated.serialNumber,
+      });
+
       res.json(updated);
     } catch (err) {
       res.status(500).json({ error: showError(err) });
@@ -173,19 +208,28 @@ export const RobotController = {
 
   /**
    * @route PUT /robots/:id
-   * @access Admin ou Propriétaire
+   * @access Propriétaire ou permission "*"
+   * @description Met à jour les données d’un robot
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
    */
   update: async (req, res) => {
     try {
       const robot = await RobotModel.getById(req.params.id);
-      const isAdmin = req.user.role?.name === 'admin';
       const isOwner = robot?.userId === req.user.id;
+      const hasRight = req.user.role?.permissions.includes('*') || isOwner;
 
-      if (!robot || (!isAdmin && !isOwner)) {
+      if (!robot || !hasRight) {
         return res.status(404).json({ error: 'Robot introuvable ou accès refusé.' });
       }
 
       const updated = await RobotModel.update(req.params.id, req.body);
+
+      await logAuditAction(req.user.id, 'update_robot', {
+        robotId: updated.id,
+        serialNumber: updated.serialNumber,
+      });
+
       res.json(updated);
     } catch (err) {
       res.status(500).json({ error: showError(err) });
@@ -194,19 +238,28 @@ export const RobotController = {
 
   /**
    * @route DELETE /robots/:id
-   * @access Admin ou Propriétaire
+   * @access Propriétaire ou permission "*"
+   * @description Supprime un robot existant
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
    */
   remove: async (req, res) => {
     try {
       const robot = await RobotModel.getById(req.params.id);
-      const isAdmin = req.user.role?.name === 'admin';
       const isOwner = robot?.userId === req.user.id;
+      const hasRight = req.user.role?.permissions.includes('*') || isOwner;
 
-      if (!robot || (!isAdmin && !isOwner)) {
+      if (!robot || !hasRight) {
         return res.status(404).json({ error: 'Robot introuvable ou accès refusé.' });
       }
 
       await RobotModel.delete(req.params.id);
+
+      await logAuditAction(req.user.id, 'delete_robot', {
+        robotId: robot.id,
+        serialNumber: robot.serialNumber,
+      });
+
       res.json({ message: 'Robot supprimé avec succès.' });
     } catch (err) {
       res.status(500).json({ error: showError(err) });

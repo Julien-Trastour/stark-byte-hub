@@ -7,7 +7,7 @@ import {
   deleteNewsController,
 } from '../controllers/news.controller.js';
 import { requireSession } from '../middlewares/session.middleware.js';
-import { isAdmin } from '../middlewares/admin.middleware.js';
+import { hasPermission } from '../middlewares/hasPermission.middleware.js';
 
 const router = express.Router();
 
@@ -58,14 +58,11 @@ router.get('/', getAllNewsController);
  */
 router.get('/:id', getNewsByIdController);
 
-// 🛡️ Routes réservées aux administrateurs
-router.use(isAdmin);
-
 /**
  * @swagger
  * /news:
  *   post:
- *     summary: Crée une nouvelle actualité (admin uniquement)
+ *     summary: Crée une nouvelle actualité (requiert "create_news")
  *     tags: [News]
  *     security:
  *       - cookieAuth: []
@@ -91,14 +88,16 @@ router.use(isAdmin);
  *     responses:
  *       201:
  *         description: Actualité créée
+ *       403:
+ *         description: Permission refusée
  */
-router.post('/', createNewsController);
+router.post('/', hasPermission('create_news'), createNewsController);
 
 /**
  * @swagger
  * /news/{id}:
  *   patch:
- *     summary: Met à jour une actualité par son ID (admin uniquement)
+ *     summary: Met à jour une actualité par son ID (requiert "edit_news")
  *     tags: [News]
  *     security:
  *       - cookieAuth: []
@@ -131,14 +130,16 @@ router.post('/', createNewsController);
  *         description: Actualité mise à jour
  *       404:
  *         description: Actualité non trouvée
+ *       403:
+ *         description: Permission refusée
  */
-router.patch('/:id', updateNewsController);
+router.patch('/:id', hasPermission('edit_news'), updateNewsController);
 
 /**
  * @swagger
  * /news/{id}:
  *   delete:
- *     summary: Supprime une actualité par son ID (admin uniquement)
+ *     summary: Supprime une actualité par son ID (requiert "delete_news")
  *     tags: [News]
  *     security:
  *       - cookieAuth: []
@@ -153,7 +154,9 @@ router.patch('/:id', updateNewsController);
  *         description: Actualité supprimée
  *       404:
  *         description: Actualité non trouvée
+ *       403:
+ *         description: Permission refusée
  */
-router.delete('/:id', deleteNewsController);
+router.delete('/:id', hasPermission('delete_news'), deleteNewsController);
 
 export default router;

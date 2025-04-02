@@ -1,6 +1,6 @@
 import argon2 from 'argon2';
 import jwt from 'jsonwebtoken';
-import crypto from 'crypto';
+import crypto from 'node:crypto';
 import { showError } from '../utils/showError.js';
 import { sendMail } from '../utils/mailer.js';
 import { getEmailTemplate } from '../utils/emailTemplates.js';
@@ -18,10 +18,16 @@ import {
   deleteResetToken,
 } from '../models/resetToken.model.js';
 
+import prisma from '../utils/db.js';
+
 /**
  * @route POST /auth/register
+ * @access Public
+ * @description Inscrit un nouvel utilisateur
  */
 export const register = async (req, res) => {
+  await new Promise((r) => setTimeout(r, 300)); // Protection anti-bruteforce
+
   try {
     const {
       email,
@@ -58,7 +64,6 @@ export const register = async (req, res) => {
       country,
     });
 
-    // Répondre avant d’envoyer l’email
     const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
       expiresIn: '7d',
     });
@@ -72,14 +77,13 @@ export const register = async (req, res) => {
       })
       .json({ user });
 
-    // Envoi de l’email de bienvenue en arrière-plan
     const { subject, html, headers } = getEmailTemplate('welcome', {
       firstName: user.firstName,
     });
+
     sendMail(email, subject, html, headers).catch((err) => {
       console.error('Erreur lors de l’envoi de l’email de bienvenue :', err);
     });
-
   } catch (err) {
     res.status(500).json({ error: showError(err) });
   }
@@ -87,18 +91,35 @@ export const register = async (req, res) => {
 
 /**
  * @route POST /auth/login
+ * @access Public
+ * @description Connecte un utilisateur via email et mot de passe
  */
 export const login = async (req, res) => {
-  try {
-    const { email, password } = req.body;
+  const { email, password } = req.body;
+  const ip = req.ip;
+  const userAgent = req.headers['user-agent'];
 
+  try {
     const user = await findUserByEmail(email);
-    if (!user || !user.password) {
-      return res.status(400).json({ error: 'Email ou mot de passe invalide.' });
+    let success = false;
+
+    if (user?.password) {
+      const valid = await argon2.verify(user.password, password);
+      success = valid;
     }
 
-    const valid = await argon2.verify(user.password, password);
-    if (!valid) {
+    // Log de la tentative (succès ou échec)
+    await prisma.loginLog.create({
+      data: {
+        email,
+        success,
+        ip,
+        userAgent,
+        userId: success ? user.id : null,
+      },
+    });
+
+    if (!success) {
       return res.status(400).json({ error: 'Email ou mot de passe invalide.' });
     }
 
@@ -121,6 +142,8 @@ export const login = async (req, res) => {
 
 /**
  * @route POST /auth/logout
+ * @access Utilisateur connecté
+ * @description Déconnecte l’utilisateur (supprime le cookie JWT)
  */
 export const logout = (req, res) => {
   res.clearCookie('token').json({ message: 'Déconnecté avec succès.' });
@@ -128,6 +151,8 @@ export const logout = (req, res) => {
 
 /**
  * @route PATCH /auth/profile
+ * @access Utilisateur connecté
+ * @description Met à jour le profil utilisateur (informations facultatives)
  */
 export const updateProfile = async (req, res) => {
   try {
@@ -140,20 +165,24 @@ export const updateProfile = async (req, res) => {
 
 /**
  * @route POST /auth/forgot-password
+ * @access Public
+ * @description Envoie un lien de réinitialisation de mot de passe
  */
 export const forgotPassword = async (req, res) => {
+  await new Promise((r) => setTimeout(r, 300)); // Délai anti-bruteforce
+
   const { email } = req.body;
   if (!email) return res.status(400).json({ error: 'Email requis.' });
 
   try {
     const user = await findUserByEmail(email);
+
     if (!user) {
-      // On renvoie quand même un message générique
       return res.json({ message: 'Si l’adresse existe, un email a été envoyé.' });
     }
 
     const token = crypto.randomBytes(32).toString('hex');
-    const expiresAt = new Date(Date.now() + 1000 * 60 * 30); // 30 min
+    const expiresAt = new Date(Date.now() + 1000 * 60 * 30); // 30 minutes
 
     await createResetToken(user.id, token, expiresAt);
 
@@ -168,7 +197,6 @@ export const forgotPassword = async (req, res) => {
     sendMail(email, subject, html, headers).catch((err) => {
       console.error('Erreur lors de l’envoi de l’email de réinitialisation :', err);
     });
-
   } catch (err) {
     res.status(500).json({ error: showError(err) });
   }
@@ -176,6 +204,8 @@ export const forgotPassword = async (req, res) => {
 
 /**
  * @route POST /auth/reset-password
+ * @access Public
+ * @description Réinitialise le mot de passe via un token sécurisé
  */
 export const resetPassword = async (req, res) => {
   const { token, newPassword } = req.body;

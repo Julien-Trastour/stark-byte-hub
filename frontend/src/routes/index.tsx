@@ -19,6 +19,7 @@ import ResetPassword from "../pages/auth/ResetPassword";
 // Pages Admin
 import AdminNewsPage from "../pages/admin/AdminNewsPage";
 import AdminRobotsPage from "../pages/admin/AdminRobotsPage";
+import AdminUsersPage from "../pages/admin/AdminUsersPage"; // 👈 nouvelle page
 
 const router = createBrowserRouter(
 	createRoutesFromElements(
@@ -37,9 +38,31 @@ const router = createBrowserRouter(
 				<Route path="robots/:id" element={<RobotDetailsPage />} />
 				<Route path="robots/:id/control" element={<RobotControlPage />} />
 
-				{/* ⚙️ Routes Admin */}
-				<Route path="admin/news" element={<AdminNewsPage />} />
-				<Route path="admin/robots" element={<AdminRobotsPage />} />
+				{/* ⚙️ Routes Admin (accessibles uniquement aux admin ou superadmin) */}
+				<Route
+					path="admin/news"
+					element={
+						<ProtectedRoute requiredRole="admin">
+							<AdminNewsPage />
+						</ProtectedRoute>
+					}
+				/>
+				<Route
+					path="admin/robots"
+					element={
+						<ProtectedRoute requiredRole="admin">
+							<AdminRobotsPage />
+						</ProtectedRoute>
+					}
+				/>
+				<Route
+					path="admin/users"
+					element={
+						<ProtectedRoute requiredRole="admin">
+							<AdminUsersPage />
+						</ProtectedRoute>
+					}
+				/>
 			</Route>
 
 			{/* 🌐 Pages publiques */}

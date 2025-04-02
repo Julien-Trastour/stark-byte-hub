@@ -6,9 +6,7 @@ import { updateUserProfile } from '../models/user.model.js';
 /**
  * @route GET /users
  * @description Récupère tous les utilisateurs (admin uniquement)
- * @access Admin
- * @param {import('express').Request} req
- * @param {import('express').Response} res
+ * @access Permission: "view_users"
  */
 export const getAllUsers = async (req, res) => {
   try {
@@ -18,8 +16,13 @@ export const getAllUsers = async (req, res) => {
         email: true,
         firstName: true,
         lastName: true,
-        role: true,
         createdAt: true,
+        role: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
     });
     res.json(users);
@@ -31,7 +34,7 @@ export const getAllUsers = async (req, res) => {
 /**
  * @route GET /users/:id
  * @description Récupère un utilisateur par son ID (admin uniquement)
- * @access Admin
+ * @access Permission: "view_users"
  */
 export const getUserById = async (req, res) => {
   const { id } = req.params;
@@ -43,8 +46,13 @@ export const getUserById = async (req, res) => {
         email: true,
         firstName: true,
         lastName: true,
-        role: true,
         createdAt: true,
+        role: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
     });
     if (!user) return res.status(404).json({ error: 'Utilisateur non trouvé.' });
@@ -55,15 +63,24 @@ export const getUserById = async (req, res) => {
 };
 
 /**
- * @route PUT /users/:id
+ * @route PATCH /users/:id
  * @description Met à jour un utilisateur (admin uniquement)
- * @access Admin
+ * @access Permission: "edit_users" (+ "edit_user_roles" pour changer le rôle)
  */
 export const updateUser = async (req, res) => {
   const { id } = req.params;
   const { firstName, lastName, email, roleId } = req.body;
 
   try {
+    // Vérifie si on tente de changer le rôle et qu'on n'a pas la permission
+    if (
+      roleId &&
+      !req.user.role.permissions.includes('edit_user_roles') &&
+      req.user.role.permissions.includes('edit_users') // évite les messages trompeurs
+    ) {
+      return res.status(403).json({ error: 'Modification du rôle interdite.' });
+    }
+
     const updated = await prisma.user.update({
       where: { id },
       data: {
@@ -71,6 +88,19 @@ export const updateUser = async (req, res) => {
         lastName,
         email,
         role: roleId ? { connect: { id: roleId } } : undefined,
+      },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        createdAt: true,
+        role: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
     });
     res.json(updated);
@@ -82,7 +112,7 @@ export const updateUser = async (req, res) => {
 /**
  * @route DELETE /users/:id
  * @description Supprime un utilisateur (admin uniquement)
- * @access Admin
+ * @access Permission: "delete_users"
  */
 export const deleteUser = async (req, res) => {
   const { id } = req.params;

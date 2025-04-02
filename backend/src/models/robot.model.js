@@ -102,4 +102,31 @@ export const RobotModel = {
       where: { id },
     });
   },
+
+  /**
+   * 📤 Récupère tous les robots avec données prêtes à l’export (CSV)
+   * @returns {Promise<object[]>}
+   */
+  getAllForExport: async () => {
+    return prisma.robot.findMany({
+      orderBy: { createdAt: 'desc' },
+      select: {
+        name: true,
+        serialNumber: true,
+        model: true,
+        firmware: true,
+        color: true,
+        controllable: true,
+        commissionedAt: true,
+        createdAt: true,
+        user: {
+          select: {
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
+      },
+    });
+  },
 };

@@ -24,21 +24,23 @@ model User {
 
   robots              Robot[]
   passwordResetTokens PasswordResetToken[]
-  userModules         UserModule[] // Modules activés par l’utilisateur
-}
+  userModules         UserModule[]
+  loginLogs           LoginLog[]
+  auditLogs           AuditLog[]
 
-enum RoleName {
-  user
-  admin
-  superadmin
-  technicien
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Role {
-  id   String    @id @default(uuid())
-  name RoleName  @unique
+  id          String   @id @default(uuid())
+  name        String   @unique
+  permissions String[]
 
   users User[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model PasswordResetToken {
@@ -47,6 +49,14 @@ model PasswordResetToken {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String
   expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model RevokedToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  expiresAt DateTime
+
   createdAt DateTime @default(now())
 }
 
@@ -64,14 +74,13 @@ model Robot {
   userId String?
   user   User?   @relation(fields: [userId], references: [id])
 
-  commands Command[]
-  sensors  SensorData[]
-  logs     Log[]
-
+  commands     Command[]
+  sensors      SensorData[]
+  logs         Log[]
   patrolRoutes PatrolRoute[]
   mappedAreas  MappedArea[]
 
-  commissionedAt DateTime? // Date de mise en service
+  commissionedAt DateTime?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 }
@@ -110,7 +119,7 @@ model Log {
 model News {
   id          String   @id @default(uuid())
   title       String
-  description String // Contenu Markdown (converti depuis éditeur riche)
+  description String
   tags        String[]
   date        DateTime @default(now())
 
@@ -142,6 +151,26 @@ model UserModule {
   module Module @relation(fields: [moduleId], references: [id])
 
   @@unique([userId, moduleId])
+}
+
+model LoginLog {
+  id        String   @id @default(cuid())
+  user      User?    @relation(fields: [userId], references: [id])
+  userId    String?
+  email     String
+  success   Boolean
+  ip        String
+  userAgent String?
+  timestamp DateTime @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  action    String // ex: "delete_robot", "update_user"
+  metadata  Json?
+  createdAt DateTime @default(now())
 }
 
 model PatrolRoute {
@@ -178,7 +207,7 @@ model PatrolPoint {
 model MappedArea {
   id         String  @id @default(uuid())
   name       String
-  type       String // "2D" | "3D"
+  type       String
   imageUrl   String?
   mapDataUrl String?
   robotId    String

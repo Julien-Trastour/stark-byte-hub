@@ -1,35 +1,54 @@
 // prisma/seed.js
-import { PrismaClient, RoleName } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-const rolesToCreate = [
-  RoleName.user,
-  RoleName.admin,
-  RoleName.superadmin,
-  RoleName.technicien,
+const roles = [
+  {
+    name: 'superadmin',
+    permissions: ['*'],
+  },
+  {
+    name: 'admin',
+    permissions: [
+      'users:view',
+      'users:edit',
+      'robots:view',
+      'robots:edit',
+      'news:manage',
+      'logs:view',
+      'logs:manage',
+    ],
+  },
+  {
+    name: 'dev',
+    permissions: ['robots:view', 'robots:edit', 'logs:view'],
+  },
+  {
+    name: 'user',
+    permissions: [],
+  },
 ];
 
 async function main() {
-  for (const name of rolesToCreate) {
+  console.log('🔄 Mise à jour des rôles...');
+  for (const { name, permissions } of roles) {
     await prisma.role.upsert({
       where: { name },
-      update: {},
-      create: {
-        name,
-      },
+      update: { permissions },
+      create: { name, permissions },
     });
-    console.log(`✅ Rôle créé ou déjà existant : ${name}`);
+    console.log(`✅ Rôle prêt : ${name}`);
   }
 }
 
 main()
   .then(() => {
     console.log('🎉 Seed terminé');
-    prisma.$disconnect();
+    return prisma.$disconnect();
   })
   .catch((err) => {
     console.error('❌ Erreur dans le seed :', err);
-    prisma.$disconnect();
-    process.exit(1);
+    return prisma.$disconnect().finally(() => process.exit(1));
   });
+

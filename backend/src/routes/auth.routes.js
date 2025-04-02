@@ -8,8 +8,20 @@ import {
   updateProfile,
 } from '../controllers/auth.controller.js';
 import { requireSession } from '../middlewares/session.middleware.js';
+import {
+  loginRateLimiter,
+  registerRateLimiter,
+  forgotPasswordRateLimiter,
+} from '../middlewares/rateLimit.middleware.js';
 
 const router = express.Router();
+
+/**
+ * @swagger
+ * tags:
+ *   name: Auth
+ *   description: Authentification et gestion utilisateur
+ */
 
 /**
  * @swagger
@@ -25,21 +37,17 @@ const router = express.Router();
  *             type: object
  *             required: [email, password, firstName, lastName]
  *             properties:
- *               email:
- *                 type: string
- *               password:
- *                 type: string
- *               firstName:
- *                 type: string
- *               lastName:
- *                 type: string
+ *               email: { type: string }
+ *               password: { type: string }
+ *               firstName: { type: string }
+ *               lastName: { type: string }
  *     responses:
  *       201:
  *         description: Utilisateur créé avec succès
  *       400:
  *         description: Erreur de validation
  */
-router.post('/register', register);
+router.post('/register', registerRateLimiter, register);
 
 /**
  * @swagger
@@ -55,17 +63,15 @@ router.post('/register', register);
  *             type: object
  *             required: [email, password]
  *             properties:
- *               email:
- *                 type: string
- *               password:
- *                 type: string
+ *               email: { type: string }
+ *               password: { type: string }
  *     responses:
  *       200:
  *         description: Connexion réussie
  *       400:
  *         description: Identifiants invalides
  */
-router.post('/login', login);
+router.post('/login', loginRateLimiter, login);
 
 /**
  * @swagger
@@ -138,15 +144,14 @@ router.patch('/profile', requireSession, updateProfile);
  *             type: object
  *             required: [email]
  *             properties:
- *               email:
- *                 type: string
+ *               email: { type: string }
  *     responses:
  *       200:
  *         description: Email envoyé
  *       404:
  *         description: Utilisateur non trouvé
  */
-router.post('/forgot-password', forgotPassword);
+router.post('/forgot-password', forgotPasswordRateLimiter, forgotPassword);
 
 /**
  * @swagger
@@ -162,10 +167,8 @@ router.post('/forgot-password', forgotPassword);
  *             type: object
  *             required: [token, newPassword]
  *             properties:
- *               token:
- *                 type: string
- *               newPassword:
- *                 type: string
+ *               token: { type: string }
+ *               newPassword: { type: string }
  *     responses:
  *       200:
  *         description: Mot de passe réinitialisé

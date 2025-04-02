@@ -8,6 +8,7 @@ export function useAuth() {
 	return {
 		user,
 		isAuthenticated: !!user,
+		roleName: user?.role?.name ?? null,
 		logout,
 	}
 }

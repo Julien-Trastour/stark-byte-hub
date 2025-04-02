@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { RobotController } from '../controllers/robot.controller.js';
 import { requireSession } from '../middlewares/session.middleware.js';
-import { isAdmin } from '../middlewares/admin.middleware.js';
+import { hasPermission } from '../middlewares/hasPermission.middleware.js';
 
 const router = Router();
 
@@ -12,6 +12,7 @@ const router = Router();
  *   description: Gestion des robots
  */
 
+// ✅ Auth obligatoire
 router.use(requireSession);
 
 /**
@@ -32,7 +33,7 @@ router.get('/', RobotController.getAllByUser);
  * @swagger
  * /robots/all:
  *   get:
- *     summary: Liste tous les robots existants (admin uniquement)
+ *     summary: Liste tous les robots existants (requiert "view_all_robots")
  *     tags: [Robots]
  *     security:
  *       - cookieAuth: []
@@ -40,9 +41,9 @@ router.get('/', RobotController.getAllByUser);
  *       200:
  *         description: Liste de tous les robots
  *       403:
- *         description: Accès refusé (non admin)
+ *         description: Permission refusée
  */
-router.get('/all', isAdmin, RobotController.getAll);
+router.get('/all', hasPermission('view_all_robots'), RobotController.getAll);
 
 /**
  * @swagger
@@ -93,6 +94,8 @@ router.post('/link', RobotController.linkToUser);
  *         description: Données du robot
  *       404:
  *         description: Robot non trouvé
+ *       403:
+ *         description: Accès refusé
  */
 router.get('/:id', RobotController.getOne);
 
@@ -100,7 +103,7 @@ router.get('/:id', RobotController.getOne);
  * @swagger
  * /robots:
  *   post:
- *     summary: Création complète d’un robot (admin uniquement)
+ *     summary: Création complète d’un robot (requiert "create_robot")
  *     tags: [Robots]
  *     security:
  *       - cookieAuth: []
@@ -127,8 +130,10 @@ router.get('/:id', RobotController.getOne);
  *     responses:
  *       201:
  *         description: Robot créé
+ *       403:
+ *         description: Permission refusée
  */
-router.post('/', isAdmin, RobotController.create);
+router.post('/', hasPermission('create_robot'), RobotController.create);
 
 /**
  * @swagger
@@ -164,6 +169,8 @@ router.post('/', isAdmin, RobotController.create);
  *         description: Robot mis à jour
  *       404:
  *         description: Robot non trouvé
+ *       403:
+ *         description: Accès refusé
  */
 router.put('/:id', RobotController.update);
 
@@ -186,6 +193,8 @@ router.put('/:id', RobotController.update);
  *         description: Robot supprimé
  *       404:
  *         description: Robot non trouvé
+ *       403:
+ *         description: Accès refusé
  */
 router.delete('/:id', RobotController.remove);
 
@@ -193,7 +202,7 @@ router.delete('/:id', RobotController.remove);
  * @swagger
  * /robots/import:
  *   post:
- *     summary: Importer plusieurs robots depuis un CSV (admin uniquement)
+ *     summary: Importer plusieurs robots depuis un CSV (requiert "import_robots")
  *     tags: [Robots]
  *     security:
  *       - cookieAuth: []
@@ -212,7 +221,9 @@ router.delete('/:id', RobotController.remove);
  *         description: Robots importés
  *       400:
  *         description: Fichier invalide
+ *       403:
+ *         description: Permission refusée
  */
-router.post('/import', isAdmin, RobotController.importMany);
+router.post('/import', hasPermission('import_robots'), RobotController.importMany);
 
 export default router;

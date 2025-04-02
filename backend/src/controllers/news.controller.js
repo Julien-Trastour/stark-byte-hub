@@ -3,8 +3,8 @@ import { showError } from '../utils/showError.js';
 
 /**
  * @route POST /news
- * @access Admin uniquement
- * @description Crée une actualité avec titre, contenu HTML, tags, date
+ * @access Permission : manage_news
+ * @description Crée une actualité (titre, description, tags, date)
  * @param {import('express').Request} req
  * @param {import('express').Response} res
  */
@@ -66,7 +66,7 @@ export const getNewsByIdController = async (req, res) => {
 
 /**
  * @route PATCH /news/:id
- * @access Admin uniquement
+ * @access Permission : manage_news
  * @description Met à jour une actualité
  * @param {import('express').Request} req
  * @param {import('express').Response} res
@@ -74,10 +74,7 @@ export const getNewsByIdController = async (req, res) => {
 export const updateNewsController = async (req, res) => {
   try {
     const data = { ...req.body };
-
-    if (data.date) {
-      data.date = new Date(data.date);
-    }
+    if (data.date) data.date = new Date(data.date);
 
     const updated = await NewsModel.updateNews(req.params.id, data);
     res.json(updated);
@@ -88,7 +85,7 @@ export const updateNewsController = async (req, res) => {
 
 /**
  * @route DELETE /news/:id
- * @access Admin uniquement
+ * @access Permission : manage_news
  * @description Supprime une actualité
  * @param {import('express').Request} req
  * @param {import('express').Response} res
