@@ -1,30 +1,22 @@
 import { useState } from "react";
-import { useSetAtom } from "jotai";
 import { useNavigate, Link } from "react-router";
-import { loginAtom } from "../../store/authAtom";
+import { useLoginMutation } from "../../hooks/useAuth";
 
 export default function Login() {
-	const login = useSetAtom(loginAtom);
 	const navigate = useNavigate();
+	const { mutate: login, isPending, error } = useLoginMutation();
 
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
-	const [error, setError] = useState("");
 
-	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+	const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
-		setError("");
-
-		try {
-			await login({ email, password });
-			navigate("/");
-		} catch (err) {
-			if (err instanceof Error) {
-				setError(err.message);
-			} else {
-				setError("Erreur inconnue");
+		login(
+			{ email, password },
+			{
+				onSuccess: () => navigate("/"),
 			}
-		}
+		);
 	};
 
 	return (
@@ -47,7 +39,7 @@ export default function Login() {
 
 				{error && (
 					<div className="rounded bg-red-500/20 p-2 text-center text-red-400">
-						{error}
+						{error instanceof Error ? error.message : "Erreur inconnue"}
 					</div>
 				)}
 
@@ -71,9 +63,10 @@ export default function Login() {
 
 				<button
 					type="submit"
-					className="group relative w-full overflow-hidden rounded-md border border-[#00aaff] py-3 font-semibold tracking-wide text-[#00aaff] transition-colors hover:bg-[#00aaff] hover:text-[#121212]"
+					disabled={isPending}
+					className="group relative w-full overflow-hidden rounded-md border border-[#00aaff] py-3 font-semibold tracking-wide text-[#00aaff] transition-colors hover:bg-[#00aaff] hover:text-[#121212] disabled:opacity-50 disabled:cursor-not-allowed"
 				>
-					<span className="relative z-10">SE CONNECTER</span>
+					<span className="relative z-10">{isPending ? "Connexion..." : "SE CONNECTER"}</span>
 					<span className="absolute inset-0 h-full w-full bg-[#00aaff]/10 blur-md" />
 				</button>
 

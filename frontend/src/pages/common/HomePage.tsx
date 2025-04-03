@@ -1,55 +1,31 @@
-import { useEffect, useState } from "react";
-import { Cpu, AlertTriangle, Clock } from "lucide-react";
-import { useAtom, useAtomValue } from "jotai";
-import { fetchNews } from "../../services/newsService";
-import { newsAtom } from "../../store/newsAtom";
-import { robotsAtom } from "../../store/robotAtom";
-import type { NewsItem } from "../../types/news";
-import HomeActu from "../../components/news/HomeActu";
-import NewsPreviewModal from "../../components/news/NewsPreviewModal";
-import ErrorBoundary from "../../components/common/ErrorBoundary";
-import LoaderFullscreen from "../../components/common/Loader";
+import { useState } from "react"
+import { Cpu, AlertTriangle, Clock } from "lucide-react"
+import { useAtomValue } from "jotai"
+import { useNewsQuery } from "../../hooks/useNews"
+import { robotsAtom } from "../../store/robotAtom"
+import type { NewsItem } from "../../types/news"
+import HomeActu from "../../components/news/HomeActu"
+import NewsPreviewModal from "../../components/news/NewsPreviewModal"
+import ErrorBoundary from "../../components/common/ErrorBoundary"
+import LoaderFullscreen from "../../components/common/Loader"
 
 export default function HomePage() {
-	const [news, setNews] = useAtom(newsAtom);
-	const [loading, setLoading] = useState(true);
-	const [error, setError] = useState("");
-	const [selectedNews, setSelectedNews] = useState<NewsItem | null>(null);
-	const robots = useAtomValue(robotsAtom);
+	const { news, isLoading, isError } = useNewsQuery()
+	const [selectedNews, setSelectedNews] = useState<NewsItem | null>(null)
+	const robots = useAtomValue(robotsAtom)
 
 	const alerts = [
 		"Mise à jour en attente",
 		"Arachnobot Julien – Batterie faible",
-	];
+	]
 
 	const activity = {
 		week: "2h 30min",
 		month: "12h 45min",
 		year: "85h 20min",
-	};
+	}
 
-	useEffect(() => {
-		const loadNews = async () => {
-			if (news.length > 0) {
-				setLoading(false);
-				return;
-			}
-			try {
-				const data = await fetchNews();
-				setNews(data);
-			} catch (err) {
-				const message =
-					err instanceof Error ? err.message : "Erreur lors du chargement des actualités";
-				setError(message);
-			} finally {
-				setLoading(false);
-			}
-		};
-
-		loadNews();
-	}, [news.length, setNews]);
-
-	if (loading) return <LoaderFullscreen message="Chargement des actualités..." />;
+	if (isLoading) return <LoaderFullscreen message="Chargement des actualités..." />
 
 	return (
 		<ErrorBoundary>
@@ -123,8 +99,10 @@ export default function HomePage() {
 						Actualités Stark Byte
 					</h2>
 
-					{error ? (
-						<p className="text-sm text-red-400 italic">{error}</p>
+					{isError ? (
+						<p className="text-sm text-red-400 italic">
+							Erreur lors du chargement des actualités.
+						</p>
 					) : news.length === 0 ? (
 						<p className="text-sm text-gray-500 italic">
 							Aucune actualité disponible pour le moment.
@@ -152,7 +130,7 @@ export default function HomePage() {
 				)}
 			</div>
 		</ErrorBoundary>
-	);
+	)
 }
 
 function StatCard({
@@ -163,12 +141,12 @@ function StatCard({
 	count,
 	children,
 }: {
-	icon: React.ReactNode;
-	iconBg: string;
-	blurColor?: string;
-	title: string;
-	count: string | number;
-	children: React.ReactNode;
+	icon: React.ReactNode
+	iconBg: string
+	blurColor?: string
+	title: string
+	count: string | number
+	children: React.ReactNode
 }) {
 	return (
 		<div className="relative rounded-xl border border-[#2a2a2a] bg-[#1e1e1e] shadow-lg overflow-hidden">
@@ -184,5 +162,5 @@ function StatCard({
 				<div className="text-[15px] text-gray-300 pl-1 space-y-1">{children}</div>
 			</div>
 		</div>
-	);
+	)
 }

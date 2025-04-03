@@ -1,29 +1,30 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Plus, Pencil, Trash } from 'lucide-react'
-import { useAtom, useSetAtom } from 'jotai'
-import { newsAtom, fetchNewsAtom } from '../../store/newsAtom'
-import { deleteNews, createNews, updateNews } from '../../services/newsService'
-import type { NewsItem } from '../../types/news'
+import type { NewsItem, NewsInput } from '../../types/news'
+import {
+  useNewsQuery,
+  useCreateNews,
+  useUpdateNews,
+  useDeleteNews,
+} from '../../hooks/useNews'
 import NewsEditModal from '../../components/admin/news/NewsEditModal'
 import { Button } from '../../components/ui'
 import { ConfirmDialog } from '../../components/common/Confirm-dialog'
 
 export default function AdminNewsPage() {
-  const [newsList] = useAtom(newsAtom)
-  const fetchNews = useSetAtom(fetchNewsAtom)
+  const { news, isLoading, isError } = useNewsQuery()
+  const createNews = useCreateNews()
+  const updateNews = useUpdateNews()
+  const deleteNews = useDeleteNews()
+
   const [modalOpen, setModalOpen] = useState(false)
   const [editingNews, setEditingNews] = useState<NewsItem | null>(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
 
-  useEffect(() => {
-    fetchNews()
-  }, [fetchNews])
-
   const handleDeleteConfirmed = async () => {
     if (!confirmDeleteId) return
     try {
-      await deleteNews(confirmDeleteId)
-      await fetchNews()
+      await deleteNews.mutateAsync(confirmDeleteId)
     } catch (err) {
       console.error('Erreur suppression actu :', err)
     } finally {
@@ -31,14 +32,13 @@ export default function AdminNewsPage() {
     }
   }
 
-  const handleSave = async (data: Omit<NewsItem, 'id' | 'updatedAt'>) => {
+  const handleSave = async (data: NewsInput) => {
     try {
       if (editingNews) {
-        await updateNews(editingNews.id, data)
+        await updateNews.mutateAsync({ id: editingNews.id, data })
       } else {
-        await createNews(data)
+        await createNews.mutateAsync(data)
       }
-      await fetchNews()
     } catch (err) {
       console.error('Erreur lors de la sauvegarde de l’actu :', err)
     } finally {
@@ -63,12 +63,16 @@ export default function AdminNewsPage() {
         </Button>
       </div>
 
-      {/* Liste d’actualités */}
-      {newsList.length === 0 ? (
+      {/* Chargement / erreur */}
+      {isLoading ? (
+        <p className="text-gray-400">Chargement en cours...</p>
+      ) : isError ? (
+        <p className="text-red-500">Erreur lors du chargement des actualités.</p>
+      ) : news.length === 0 ? (
         <p className="text-gray-400">Aucune actualité pour le moment.</p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {newsList.map((news) => {
+          {news.map((news) => {
             const plainText = news.description
               .replace(/^#{1,6}\s+/gm, '')
               .replace(/\*\*(.*?)\*\*/g, '$1')
@@ -89,6 +93,16 @@ export default function AdminNewsPage() {
                 key={news.id}
                 className="rounded-lg border-l-4 border-[#00aaff]/30 bg-[#1e1e1e] p-6 shadow-lg shadow-[#00aaff]/10"
               >
+                {/* Image si présente */}
+                {news.image && (
+                  <img
+                    src={`${import.meta.env.VITE_API_URL}/uploads/news/${news.image}`}
+                    alt={news.title}
+                    className="w-full h-40 object-cover rounded-md mb-4"
+                  />
+                )}
+
+                {/* Tags */}
                 <div className="flex flex-wrap gap-2 mb-2">
                   {news.tags.map((tag) => (
                     <span
@@ -100,14 +114,14 @@ export default function AdminNewsPage() {
                   ))}
                 </div>
 
+                {/* Titre / Extrait */}
                 <h3 className="text-white font-bold text-lg mb-1">{news.title}</h3>
-
                 <p className="text-gray-400 text-sm mb-2 line-clamp-3">{plainText}</p>
-
                 <p className="text-gray-500 text-xs mb-3">
                   {new Date(news.date).toLocaleDateString('fr-FR')}
                 </p>
 
+                {/* Actions */}
                 <div className="flex gap-2">
                   <Button
                     variant="outline"

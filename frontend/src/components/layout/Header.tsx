@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { LogOut, User, Settings, ChevronDown } from "lucide-react";
-import { useNavigate, Link } from "react-router";
-import { useAtomValue, useSetAtom } from "jotai";
-import { authAtom, logoutAtom } from "../../store/authAtom";
+import { Link, useNavigate } from "react-router";
+import { useAtomValue } from "jotai";
+import { authAtom } from "../../store/authAtom";
+import { useLogout } from "../../hooks/useAuth";
 
 export default function Header() {
 	const user = useAtomValue(authAtom);
-	const logout = useSetAtom(logoutAtom);
+	const logout = useLogout();
 	const navigate = useNavigate();
 
 	const [open, setOpen] = useState(false);
@@ -32,6 +33,7 @@ export default function Header() {
 		<header className="h-16 px-6 flex items-center justify-end border-b bg-[#1e1e1e] border-[#2a2a2a] text-white">
 			<div className="relative" ref={dropdownRef}>
 				<button
+					type="button"
 					onClick={() => setOpen((prev) => !prev)}
 					className="flex items-center gap-2 text-sm hover:text-[#00aaff] transition"
 				>
@@ -59,6 +61,7 @@ export default function Header() {
 							<Settings size={16} /> Paramètres
 						</Link>
 						<button
+							type="button"
 							onClick={handleLogout}
 							className="w-full text-left px-4 py-2 hover:bg-red-500/10 text-red-400 flex items-center gap-2"
 						>

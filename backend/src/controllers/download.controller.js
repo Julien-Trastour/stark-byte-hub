@@ -4,7 +4,7 @@ import { showError } from '../utils/showError.js';
 import { RobotModel } from '../models/robot.model.js';
 import { Parser } from 'json2csv';
 
-const firmwareDir = 'uploads/firmwares';
+const firmwareDir = path.resolve('uploads/firmwares');
 
 /**
  * @route GET /download/firmwares
@@ -15,9 +15,7 @@ const firmwareDir = 'uploads/firmwares';
  */
 export const listFirmwares = async (_req, res) => {
   try {
-    const files = fs
-      .readdirSync(firmwareDir)
-      .filter((f) => f !== '.gitkeep');
+    const files = fs.readdirSync(firmwareDir).filter((f) => f !== '.gitkeep');
 
     const detailed = files.map((filename) => {
       const filePath = path.join(firmwareDir, filename);
@@ -26,7 +24,7 @@ export const listFirmwares = async (_req, res) => {
       return {
         filename,
         size: stat.size, // en octets
-        uploadedAt: stat.birthtime, // ou stat.mtime
+        uploadedAt: stat.birthtime, // date de création du fichier
         url: `/download/firmwares/${filename}`,
       };
     });
@@ -66,7 +64,7 @@ export const downloadFirmware = async (req, res) => {
  * @param {import('express').Request} _req
  * @param {import('express').Response} res
  */
-export const exportRobotsCSV = async (_req, res) => {
+export const downloadRobotsCSV = async (_req, res) => {
   try {
     const robots = await RobotModel.getAllForExport();
 
@@ -79,14 +77,14 @@ export const exportRobotsCSV = async (_req, res) => {
       controle: r.controllable ? 'Oui' : 'Non',
       utilisateur: r.user ? `${r.user.firstName} ${r.user.lastName}` : '',
       email_utilisateur: r.user?.email || '',
-      date_mise_en_service: r.commissionedAt || '',
-      date_creation: r.createdAt,
+      date_mise_en_service: r.commissionedAt?.toISOString() || '',
+      date_creation: r.createdAt.toISOString(),
     }));
 
     const parser = new Parser({ delimiter: ';' });
     const csv = parser.parse(rows);
 
-    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', 'attachment; filename=robots.csv');
     res.status(200).send(csv);
   } catch (err) {

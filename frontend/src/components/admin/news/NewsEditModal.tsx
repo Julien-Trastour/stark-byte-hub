@@ -1,57 +1,68 @@
-import { useEffect, useState } from "react";
-import { Input, Button, Label } from "../../ui";
-import { toast } from "react-hot-toast";
-import type { NewsItem } from "../../../types/news";
-import MDEditor from "@uiw/react-md-editor";
-import "@uiw/react-md-editor/markdown-editor.css";
-import "@uiw/react-markdown-preview/markdown.css";
+import { useEffect, useState } from "react"
+import { Input, Button, Label } from "../../ui"
+import { toast } from "react-hot-toast"
+import type { NewsItem } from "../../../types/news"
+import { uploadNewsImage } from "../../../services/newsService"
+import MDEditor from "@uiw/react-md-editor"
+import "@uiw/react-md-editor/markdown-editor.css"
+import "@uiw/react-markdown-preview/markdown.css"
 
 interface Props {
-  initialData?: NewsItem;
-  onClose: () => void;
-  onSave: (news: Omit<NewsItem, "id" | "updatedAt">) => Promise<void>;
+  initialData?: NewsItem
+  onClose: () => void
+  onSave: (news: Omit<NewsItem, "id" | "createdAt" | "updatedAt">) => Promise<void>
 }
 
 export default function NewsEditModal({ initialData, onClose, onSave }: Props) {
-  const isEditing = !!initialData;
-  const [title, setTitle] = useState("");
-  const [tags, setTags] = useState("");
-  const [description, setDescription] = useState("");
-  const [loading, setLoading] = useState(false);
+  const isEditing = !!initialData
+  const [title, setTitle] = useState("")
+  const [tags, setTags] = useState("")
+  const [description, setDescription] = useState("")
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     if (initialData) {
-      setTitle(initialData.title);
-      setTags(initialData.tags.join(", "));
-      setDescription(initialData.description);
+      setTitle(initialData.title)
+      setTags(initialData.tags.join(", "))
+      setDescription(initialData.description)
     }
-  }, [initialData]);
+  }, [initialData])
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
+    e.preventDefault()
+    setLoading(true)
 
     const tagsArray = tags
       .split(",")
       .map((t) => t.trim())
-      .filter(Boolean);
+      .filter(Boolean)
 
     try {
+      let image: string | undefined = initialData?.image
+
+      // Si nouvelle image, on l'upload
+      if (imageFile) {
+        const res = await uploadNewsImage(imageFile)
+        image = res.filename
+      }
+
       await onSave({
         title,
         tags: tagsArray,
         description,
         date: initialData?.date || new Date().toISOString(),
-        createdAt: initialData?.createdAt || new Date().toISOString(),
-      });
-      toast.success(isEditing ? "Actualité modifiée" : "Actualité créée");
-      onClose();
+        image,
+      })
+
+      toast.success(isEditing ? "Actualité modifiée" : "Actualité créée")
+      onClose()
     } catch (err) {
-      toast.error("Erreur lors de l'enregistrement");
+      toast.error("Erreur lors de l'enregistrement")
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4 animate-fadeIn">
@@ -101,6 +112,16 @@ export default function NewsEditModal({ initialData, onClose, onSave }: Props) {
             </div>
           </div>
 
+          <div>
+            <Label htmlFor="image">Image (optionnelle)</Label>
+            <Input
+              id="image"
+              type="file"
+              accept="image/*"
+              onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+            />
+          </div>
+
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={onClose}>
               Annuler
@@ -112,5 +133,5 @@ export default function NewsEditModal({ initialData, onClose, onSave }: Props) {
         </form>
       </div>
     </div>
-  );
+  )
 }

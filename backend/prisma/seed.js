@@ -1,54 +1,53 @@
-// prisma/seed.js
 import { PrismaClient } from '@prisma/client';
-
 const prisma = new PrismaClient();
 
-const roles = [
-  {
-    name: 'superadmin',
-    permissions: ['*'],
-  },
-  {
-    name: 'admin',
-    permissions: [
-      'users:view',
-      'users:edit',
-      'robots:view',
-      'robots:edit',
-      'news:manage',
-      'logs:view',
-      'logs:manage',
-    ],
-  },
-  {
-    name: 'dev',
-    permissions: ['robots:view', 'robots:edit', 'logs:view'],
-  },
-  {
-    name: 'user',
-    permissions: [],
-  },
+const basePermissions = [
+  // Utilisateurs
+  'view_users',
+  'edit_users',
+  'delete_users',
+
+  // Robots
+  'view_all_robots',
+
+  // Actualités
+  'create_news',
+  'edit_news',
+  'delete_news',
+
+  // Firmwares
+  'upload_firmwares',
+
+  // Rôles
+  'view_roles',
+  'create_role',
+  'edit_roles',
+  'delete_roles',
+
+  // Permissions
+  'view_permissions',
+  'create_permission',
+  'edit_permission',
+  'delete_permission',
 ];
 
 async function main() {
-  console.log('🔄 Mise à jour des rôles...');
-  for (const { name, permissions } of roles) {
-    await prisma.role.upsert({
-      where: { name },
-      update: { permissions },
-      create: { name, permissions },
-    });
-    console.log(`✅ Rôle prêt : ${name}`);
+  for (const name of basePermissions) {
+    const exists = await prisma.permission.findUnique({ where: { name } });
+    if (!exists) {
+      await prisma.permission.create({ data: { name } });
+      console.log(`✅ Ajout : ${name}`);
+    } else {
+      console.log(`ℹ️ Existe déjà : ${name}`);
+    }
   }
 }
 
 main()
-  .then(() => {
-    console.log('🎉 Seed terminé');
-    return prisma.$disconnect();
+  .catch((e) => {
+    console.error('❌ Erreur seed permissions :', e);
+    process.exit(1);
   })
-  .catch((err) => {
-    console.error('❌ Erreur dans le seed :', err);
-    return prisma.$disconnect().finally(() => process.exit(1));
+  .finally(async () => {
+    await prisma.$disconnect();
   });
-

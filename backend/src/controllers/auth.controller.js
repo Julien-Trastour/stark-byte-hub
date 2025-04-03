@@ -21,12 +21,50 @@ import {
 import prisma from '../utils/db.js';
 
 /**
+ * 🔁 Récupère un utilisateur complet avec rôle + permissions (en string[])
+ * @param {string} userId
+ */
+const getFullUser = async (userId) => {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      email: true,
+      firstName: true,
+      lastName: true,
+      address: true,
+      address2: true,
+      zipCode: true,
+      city: true,
+      country: true,
+      createdAt: true,
+      role: {
+        select: {
+          id: true,
+          name: true,
+          permissions: {
+            select: { name: true },
+          },
+        },
+      },
+    },
+  });
+
+  return {
+    ...user,
+    role: {
+      ...user.role,
+      permissions: user.role.permissions.map((p) => p.name),
+    },
+  };
+};
+
+/**
  * @route POST /auth/register
  * @access Public
- * @description Inscrit un nouvel utilisateur
  */
 export const register = async (req, res) => {
-  await new Promise((r) => setTimeout(r, 300)); // Protection anti-bruteforce
+  await new Promise((r) => setTimeout(r, 300));
 
   try {
     const {
@@ -68,6 +106,8 @@ export const register = async (req, res) => {
       expiresIn: '7d',
     });
 
+    const fullUser = await getFullUser(user.id);
+
     res
       .cookie('token', token, {
         httpOnly: true,
@@ -75,14 +115,14 @@ export const register = async (req, res) => {
         sameSite: 'lax',
         maxAge: 1000 * 60 * 60 * 24 * 7,
       })
-      .json({ user });
+      .json({ user: fullUser });
 
     const { subject, html, headers } = getEmailTemplate('welcome', {
       firstName: user.firstName,
     });
 
     sendMail(email, subject, html, headers).catch((err) => {
-      console.error('Erreur lors de l’envoi de l’email de bienvenue :', err);
+      console.error("Erreur lors de l'envoi de l'email de bienvenue :", err);
     });
   } catch (err) {
     res.status(500).json({ error: showError(err) });
@@ -92,7 +132,6 @@ export const register = async (req, res) => {
 /**
  * @route POST /auth/login
  * @access Public
- * @description Connecte un utilisateur via email et mot de passe
  */
 export const login = async (req, res) => {
   const { email, password } = req.body;
@@ -108,7 +147,6 @@ export const login = async (req, res) => {
       success = valid;
     }
 
-    // Log de la tentative (succès ou échec)
     await prisma.loginLog.create({
       data: {
         email,
@@ -127,6 +165,8 @@ export const login = async (req, res) => {
       expiresIn: '7d',
     });
 
+    const fullUser = await getFullUser(user.id);
+
     res
       .cookie('token', token, {
         httpOnly: true,
@@ -134,7 +174,7 @@ export const login = async (req, res) => {
         sameSite: 'lax',
         maxAge: 1000 * 60 * 60 * 24 * 7,
       })
-      .json({ user });
+      .json({ user: fullUser });
   } catch (err) {
     res.status(500).json({ error: showError(err) });
   }
@@ -142,8 +182,7 @@ export const login = async (req, res) => {
 
 /**
  * @route POST /auth/logout
- * @access Utilisateur connecté
- * @description Déconnecte l’utilisateur (supprime le cookie JWT)
+ * @access Privé
  */
 export const logout = (req, res) => {
   res.clearCookie('token').json({ message: 'Déconnecté avec succès.' });
@@ -151,13 +190,13 @@ export const logout = (req, res) => {
 
 /**
  * @route PATCH /auth/profile
- * @access Utilisateur connecté
- * @description Met à jour le profil utilisateur (informations facultatives)
+ * @access Privé
  */
 export const updateProfile = async (req, res) => {
   try {
     const updated = await updateUserProfile(req.user.id, req.body);
-    res.json({ user: updated });
+    const refreshedUser = await getFullUser(req.user.id);
+    res.json({ user: refreshedUser });
   } catch (err) {
     res.status(500).json({ error: showError(err) });
   }
@@ -166,23 +205,21 @@ export const updateProfile = async (req, res) => {
 /**
  * @route POST /auth/forgot-password
  * @access Public
- * @description Envoie un lien de réinitialisation de mot de passe
  */
 export const forgotPassword = async (req, res) => {
-  await new Promise((r) => setTimeout(r, 300)); // Délai anti-bruteforce
-
+  await new Promise((r) => setTimeout(r, 300));
   const { email } = req.body;
+
   if (!email) return res.status(400).json({ error: 'Email requis.' });
 
   try {
     const user = await findUserByEmail(email);
-
     if (!user) {
       return res.json({ message: 'Si l’adresse existe, un email a été envoyé.' });
     }
 
     const token = crypto.randomBytes(32).toString('hex');
-    const expiresAt = new Date(Date.now() + 1000 * 60 * 30); // 30 minutes
+    const expiresAt = new Date(Date.now() + 1000 * 60 * 30);
 
     await createResetToken(user.id, token, expiresAt);
 
@@ -195,7 +232,7 @@ export const forgotPassword = async (req, res) => {
     });
 
     sendMail(email, subject, html, headers).catch((err) => {
-      console.error('Erreur lors de l’envoi de l’email de réinitialisation :', err);
+      console.error("Erreur lors de l'envoi de l'email de réinitialisation :", err);
     });
   } catch (err) {
     res.status(500).json({ error: showError(err) });
@@ -205,7 +242,6 @@ export const forgotPassword = async (req, res) => {
 /**
  * @route POST /auth/reset-password
  * @access Public
- * @description Réinitialise le mot de passe via un token sécurisé
  */
 export const resetPassword = async (req, res) => {
   const { token, newPassword } = req.body;

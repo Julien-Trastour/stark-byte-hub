@@ -1,5 +1,5 @@
-import prisma from '../utils/db.js';
-import { showError } from '../utils/showError.js';
+import prisma from '../utils/db.js'
+import { showError } from '../utils/showError.js'
 
 /**
  * @route GET /roles
@@ -10,11 +10,10 @@ export const getAllRoles = async (_req, res) => {
   try {
     const roles = await prisma.role.findMany({
       orderBy: { name: 'asc' },
-      select: {
-        id: true,
-        name: true,
-        permissions: true,
-        createdAt: true,
+      include: {
+        permissions: {
+          select: { name: true },
+        },
       },
     });
     res.json(roles);
@@ -32,11 +31,10 @@ export const getRoleById = async (req, res) => {
   try {
     const role = await prisma.role.findUnique({
       where: { id: req.params.id },
-      select: {
-        id: true,
-        name: true,
-        permissions: true,
-        createdAt: true,
+      include: {
+        permissions: {
+          select: { name: true },
+        },
       },
     });
 
@@ -69,13 +67,14 @@ export const createRole = async (req, res) => {
     const role = await prisma.role.create({
       data: {
         name,
-        permissions,
+        permissions: {
+          connect: permissions.map((p) => ({ name: p })),
+        },
       },
-      select: {
-        id: true,
-        name: true,
-        permissions: true,
-        createdAt: true,
+      include: {
+        permissions: {
+          select: { name: true },
+        },
       },
     });
 
@@ -106,13 +105,17 @@ export const updateRole = async (req, res) => {
       where: { id },
       data: {
         ...(name && { name }),
-        ...(permissions && Array.isArray(permissions) && { permissions }),
+        ...(permissions && {
+          permissions: {
+            set: [], // on vide
+            connect: permissions.map((p) => ({ name: p })),
+          },
+        }),
       },
-      select: {
-        id: true,
-        name: true,
-        permissions: true,
-        createdAt: true,
+      include: {
+        permissions: {
+          select: { name: true },
+        },
       },
     });
 

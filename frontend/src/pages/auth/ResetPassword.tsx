@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router";
-import { resetPassword } from "../../services/authService";
 import { Link } from "react-router";
+import { useResetPassword } from "../../hooks/useAuth";
 
 export default function ResetPassword() {
 	const [searchParams] = useSearchParams();
@@ -9,31 +9,26 @@ export default function ResetPassword() {
 	const token = searchParams.get("token");
 
 	const [newPassword, setNewPassword] = useState("");
-	const [message, setMessage] = useState("");
-	const [error, setError] = useState("");
+	const { mutate, isPending, error, data } = useResetPassword();
 
 	useEffect(() => {
-		if (!token) setError("Lien invalide ou expiré");
+		if (!token) {
+			console.error("Token manquant ou invalide");
+		}
 	}, [token]);
 
-	const handleSubmit = async (e: React.FormEvent) => {
+	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
-		setError("");
-		setMessage("");
+		if (!token) return;
 
-		if (!token) return setError("Token manquant");
-
-		try {
-			const msg = await resetPassword(token, newPassword);
-			setMessage(msg);
-			setTimeout(() => navigate("/login"), 2000);
-		} catch (err) {
-			if (err instanceof Error) {
-				setError(err.message);
-			} else {
-				setError("Erreur inconnue");
+		mutate(
+			{ token, newPassword },
+			{
+				onSuccess: () => {
+					setTimeout(() => navigate("/login"), 2000);
+				},
 			}
-		}
+		);
 	};
 
 	return (
@@ -54,15 +49,15 @@ export default function ResetPassword() {
 					</p>
 				</div>
 
-				{message && (
+				{data && (
 					<div className="rounded bg-green-500/20 p-2 text-center text-green-400">
-						{message}
+						{data}
 					</div>
 				)}
 
 				{error && (
 					<div className="rounded bg-red-500/20 p-2 text-center text-red-400">
-						{error}
+						{error.message}
 					</div>
 				)}
 
@@ -77,10 +72,13 @@ export default function ResetPassword() {
 
 				<button
 					type="submit"
-					className="group relative w-full overflow-hidden rounded-md border border-[#00aaff] py-3 font-semibold tracking-wide text-[#00aaff] transition-colors hover:bg-[#00aaff] hover:text-[#121212]"
+					disabled={!token || isPending}
+					className="group relative w-full overflow-hidden rounded-md border border-[#00aaff] py-3 font-semibold tracking-wide text-[#00aaff] transition-colors hover:bg-[#00aaff] hover:text-[#121212] disabled:opacity-50 disabled:cursor-not-allowed"
 				>
-					<span className="relative z-10">RÉINITIALISER</span>
-					<span className="absolute inset-0 h-full w-full bg-[#00aaff]/10 blur-md"></span>
+					<span className="relative z-10">
+						{isPending ? "Réinitialisation..." : "RÉINITIALISER"}
+					</span>
+					<span className="absolute inset-0 h-full w-full bg-[#00aaff]/10 blur-md" />
 				</button>
 
 				<div className="text-center">

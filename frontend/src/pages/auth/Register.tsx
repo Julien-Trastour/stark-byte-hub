@@ -1,47 +1,34 @@
 import { useState } from "react";
-import { useSetAtom } from "jotai";
 import { useNavigate, Link } from "react-router";
-import { registerAtom } from "../../store/authAtom";
+import { useRegisterMutation } from "../../hooks/useAuth";
+import type { RegisterPayload } from "../../types/auth";
 
 export default function Register() {
-	const [firstName, setFirstName] = useState("");
-	const [lastName, setLastName] = useState("");
-	const [email, setEmail] = useState("");
-	const [password, setPassword] = useState("");
-	const [address, setAddress] = useState("");
-	const [address2, setAddress2] = useState("");
-	const [zipCode, setZipCode] = useState("");
-	const [city, setCity] = useState("");
-	const [country, setCountry] = useState("");
-	const [error, setError] = useState("");
-
 	const navigate = useNavigate();
-	const register = useSetAtom(registerAtom);
+	const { mutate: register, isPending, error } = useRegisterMutation();
 
-	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+	const [form, setForm] = useState<RegisterPayload>({
+		firstName: "",
+		lastName: "",
+		email: "",
+		password: "",
+		address: "",
+		address2: "",
+		zipCode: "",
+		city: "",
+		country: "",
+	});
+
+	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const { name, value } = e.target;
+		setForm((prev) => ({ ...prev, [name]: value }));
+	};
+
+	const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
-		setError("");
-
-		try {
-			await register({
-				firstName,
-				lastName,
-				email,
-				password,
-				address,
-				address2,
-				zipCode,
-				city,
-				country,
-			});
-			navigate("/");
-		} catch (err) {
-			if (err instanceof Error) {
-				setError(err.message);
-			} else {
-				setError("Erreur inconnue");
-			}
-		}
+		register(form, {
+			onSuccess: () => navigate("/"),
+		});
 	};
 
 	return (
@@ -64,96 +51,37 @@ export default function Register() {
 
 				{error && (
 					<div className="rounded bg-red-500/20 p-2 text-center text-red-400">
-						{error}
+						{error instanceof Error ? error.message : "Erreur inconnue"}
 					</div>
 				)}
 
 				<div className="grid grid-cols-2 gap-4">
-					<input
-						type="text"
-						placeholder="Prénom"
-						value={firstName}
-						onChange={(e) => setFirstName(e.target.value)}
-						required
-						className="rounded-md border border-[#444444] bg-[#333333] px-4 py-3 text-white placeholder-gray-400 outline-none focus:border-[#00aaff]"
-					/>
-
-					<input
-						type="text"
-						placeholder="Nom"
-						value={lastName}
-						onChange={(e) => setLastName(e.target.value)}
-						required
-						className="rounded-md border border-[#444444] bg-[#333333] px-4 py-3 text-white placeholder-gray-400 outline-none focus:border-[#00aaff]"
-					/>
+					<input name="firstName" type="text" placeholder="Prénom" value={form.firstName} onChange={handleChange} required className="rounded-md border border-[#444444] bg-[#333333] px-4 py-3 text-white placeholder-gray-400 outline-none focus:border-[#00aaff]" />
+					<input name="lastName" type="text" placeholder="Nom" value={form.lastName} onChange={handleChange} required className="rounded-md border border-[#444444] bg-[#333333] px-4 py-3 text-white placeholder-gray-400 outline-none focus:border-[#00aaff]" />
 				</div>
 
-				<input
-					type="email"
-					placeholder="Adresse email"
-					value={email}
-					onChange={(e) => setEmail(e.target.value)}
-					required
-					className="w-full rounded-md border border-[#444444] bg-[#333333] px-4 py-3 text-white placeholder-gray-400 outline-none focus:border-[#00aaff]"
-				/>
+				<input name="email" type="email" placeholder="Adresse email" value={form.email} onChange={handleChange} required className="w-full rounded-md border border-[#444444] bg-[#333333] px-4 py-3 text-white placeholder-gray-400 outline-none focus:border-[#00aaff]" />
 
-				<input
-					type="password"
-					placeholder="Mot de passe"
-					value={password}
-					onChange={(e) => setPassword(e.target.value)}
-					required
-					className="w-full rounded-md border border-[#444444] bg-[#333333] px-4 py-3 text-white placeholder-gray-400 outline-none focus:border-[#00aaff]"
-				/>
+				<input name="password" type="password" placeholder="Mot de passe" value={form.password} onChange={handleChange} required className="w-full rounded-md border border-[#444444] bg-[#333333] px-4 py-3 text-white placeholder-gray-400 outline-none focus:border-[#00aaff]" />
 
-				<input
-					type="text"
-					placeholder="Adresse"
-					value={address}
-					onChange={(e) => setAddress(e.target.value)}
-					className="w-full rounded-md border border-[#444444] bg-[#333333] px-4 py-3 text-white placeholder-gray-400 outline-none focus:border-[#00aaff]"
-				/>
+				<input name="address" type="text" placeholder="Adresse" value={form.address} onChange={handleChange} className="w-full rounded-md border border-[#444444] bg-[#333333] px-4 py-3 text-white placeholder-gray-400 outline-none focus:border-[#00aaff]" />
 
-				<input
-					type="text"
-					placeholder="Complément d’adresse"
-					value={address2}
-					onChange={(e) => setAddress2(e.target.value)}
-					className="w-full rounded-md border border-[#444444] bg-[#333333] px-4 py-3 text-white placeholder-gray-400 outline-none focus:border-[#00aaff]"
-				/>
+				<input name="address2" type="text" placeholder="Complément d’adresse" value={form.address2} onChange={handleChange} className="w-full rounded-md border border-[#444444] bg-[#333333] px-4 py-3 text-white placeholder-gray-400 outline-none focus:border-[#00aaff]" />
 
 				<div className="grid grid-cols-2 gap-4">
-					<input
-						type="text"
-						placeholder="Code postal"
-						value={zipCode}
-						onChange={(e) => setZipCode(e.target.value)}
-						className="rounded-md border border-[#444444] bg-[#333333] px-4 py-3 text-white placeholder-gray-400 outline-none focus:border-[#00aaff]"
-					/>
-
-					<input
-						type="text"
-						placeholder="Ville"
-						value={city}
-						onChange={(e) => setCity(e.target.value)}
-						className="rounded-md border border-[#444444] bg-[#333333] px-4 py-3 text-white placeholder-gray-400 outline-none focus:border-[#00aaff]"
-					/>
+					<input name="zipCode" type="text" placeholder="Code postal" value={form.zipCode} onChange={handleChange} className="rounded-md border border-[#444444] bg-[#333333] px-4 py-3 text-white placeholder-gray-400 outline-none focus:border-[#00aaff]" />
+					<input name="city" type="text" placeholder="Ville" value={form.city} onChange={handleChange} className="rounded-md border border-[#444444] bg-[#333333] px-4 py-3 text-white placeholder-gray-400 outline-none focus:border-[#00aaff]" />
 				</div>
 
-				<input
-					type="text"
-					placeholder="Pays"
-					value={country}
-					onChange={(e) => setCountry(e.target.value)}
-					className="w-full rounded-md border border-[#444444] bg-[#333333] px-4 py-3 text-white placeholder-gray-400 outline-none focus:border-[#00aaff]"
-				/>
+				<input name="country" type="text" placeholder="Pays" value={form.country} onChange={handleChange} className="w-full rounded-md border border-[#444444] bg-[#333333] px-4 py-3 text-white placeholder-gray-400 outline-none focus:border-[#00aaff]" />
 
 				<button
 					type="submit"
-					className="group relative w-full overflow-hidden rounded-md border border-[#00aaff] py-3 font-semibold tracking-wide text-[#00aaff] transition-colors hover:bg-[#00aaff] hover:text-[#121212]"
+					disabled={isPending}
+					className="group relative w-full overflow-hidden rounded-md border border-[#00aaff] py-3 font-semibold tracking-wide text-[#00aaff] transition-colors hover:bg-[#00aaff] hover:text-[#121212] disabled:opacity-50 disabled:cursor-not-allowed"
 				>
-					<span className="relative z-10">S’INSCRIRE</span>
-					<span className="absolute inset-0 h-full w-full bg-[#00aaff]/10 blur-md"></span>
+					<span className="relative z-10">{isPending ? "Création..." : "S’INSCRIRE"}</span>
+					<span className="absolute inset-0 h-full w-full bg-[#00aaff]/10 blur-md" />
 				</button>
 
 				<div className="text-center">

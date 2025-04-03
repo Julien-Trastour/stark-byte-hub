@@ -2,7 +2,7 @@ import type { User } from "../types/user"
 
 const BASE_URL = import.meta.env.VITE_API_URL
 
-async function api<T = any>(
+async function api<T = unknown>(
 	endpoint: string,
 	options?: RequestInit,
 	parseJson = true

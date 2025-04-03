@@ -1,27 +1,14 @@
 import { useState } from "react";
-import { sendResetLink } from "../../services/authService";
 import { Link } from "react-router";
+import { useSendResetLink } from "../../hooks/useAuth";
 
 export default function ForgotPassword() {
 	const [email, setEmail] = useState("");
-	const [message, setMessage] = useState("");
-	const [error, setError] = useState("");
+	const { mutate, isPending, error, data } = useSendResetLink();
 
-	const handleSubmit = async (e: React.FormEvent) => {
+	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
-		setMessage("");
-		setError("");
-
-		try {
-			const confirmation = await sendResetLink(email);
-			setMessage(confirmation);
-		} catch (err) {
-			if (err instanceof Error) {
-				setError(err.message);
-			} else {
-				setError("Erreur inconnue");
-			}
-		}
+		mutate(email);
 	};
 
 	return (
@@ -42,14 +29,15 @@ export default function ForgotPassword() {
 					</p>
 				</div>
 
-				{message && (
+				{data && (
 					<div className="rounded bg-green-500/20 p-2 text-center text-green-400">
-						{message}
+						{data}
 					</div>
 				)}
+
 				{error && (
 					<div className="rounded bg-red-500/20 p-2 text-center text-red-400">
-						{error}
+						{error.message}
 					</div>
 				)}
 
@@ -64,10 +52,13 @@ export default function ForgotPassword() {
 
 				<button
 					type="submit"
-					className="group relative w-full overflow-hidden rounded-md border border-[#00aaff] py-3 font-semibold tracking-wide text-[#00aaff] transition-colors hover:bg-[#00aaff] hover:text-[#121212]"
+					disabled={isPending}
+					className="group relative w-full overflow-hidden rounded-md border border-[#00aaff] py-3 font-semibold tracking-wide text-[#00aaff] transition-colors hover:bg-[#00aaff] hover:text-[#121212] disabled:opacity-50 disabled:cursor-not-allowed"
 				>
-					<span className="relative z-10">ENVOYER LE LIEN</span>
-					<span className="absolute inset-0 h-full w-full bg-[#00aaff]/10 blur-md"></span>
+					<span className="relative z-10">
+						{isPending ? "Envoi en cours..." : "ENVOYER LE LIEN"}
+					</span>
+					<span className="absolute inset-0 h-full w-full bg-[#00aaff]/10 blur-md" />
 				</button>
 
 				<div className="text-center">

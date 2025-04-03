@@ -22,7 +22,7 @@ const router = express.Router();
  *   description: Upload de fichiers (images, firmwares…)
  */
 
-// 🔐 Authentification requise pour tout
+// 🔑 Authentification requise pour certains uploads, mais pas pour les fichiers statiques
 router.use(requireSession);
 
 /**
@@ -117,5 +117,9 @@ router.post(
   multerFirmware.single('file'),
   uploadFirmwareController
 );
+
+// 🔑 Serve static files from the 'uploads' folder (public access)
+// Expose images in 'uploads/news' publicly
+router.use('/uploads', express.static('uploads'));
 
 export default router;

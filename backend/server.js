@@ -11,6 +11,7 @@ import robotRoutes from './src/routes/robot.routes.js';
 import newsRoutes from './src/routes/news.routes.js';
 import logRoutes from './src/routes/log.routes.js';
 import roleRoutes from './src/routes/role.routes.js';
+import permissionRoutes from './src/routes/permission.routes.js';
 import uploadRoutes from './src/routes/upload.routes.js';
 import downloadRoutes from './src/routes/download.routes.js';
 
@@ -38,6 +39,7 @@ app.use('/robots', robotRoutes);
 app.use('/news', newsRoutes);
 app.use('/logs', logRoutes);
 app.use('/roles', roleRoutes);
+app.use('/permissions', permissionRoutes);
 app.use('/upload', uploadRoutes);
 app.use('/download', downloadRoutes);
 

@@ -1,9 +1,9 @@
-import type { NewsItem } from "../../types/news";
+import type { NewsItem } from "../../types/news"
 
 type Props = {
-	news: NewsItem;
-	onOpen: (news: NewsItem) => void;
-};
+	news: NewsItem
+	onOpen: (news: NewsItem) => void
+}
 
 // Nettoyage du markdown pour aperçu
 function getPlainText(markdown: string): string {
@@ -19,25 +19,30 @@ function getPlainText(markdown: string): string {
 		.replace(/\n{2,}/g, "\n")
 		.replace(/^[\s\n]*|[\s\n]*$/g, "")
 		.replace(/\n/g, " ")
-		.trim();
+		.trim()
 }
 
 export default function HomeActu({ news, onOpen }: Props) {
-	const preview = getPlainText(news.description).slice(0, 300);
+	const preview = getPlainText(news.description).slice(0, 300)
 	const formattedDate = new Date(news.date).toLocaleDateString("fr-FR", {
 		day: "numeric",
 		month: "long",
 		year: "numeric",
-	});
+	})
+
+	const imageUrl = news.image
+		? `${import.meta.env.VITE_API_URL}/uploads/news/${news.image}`
+		: null
 
 	return (
 		<div className="rounded-lg border-l-4 border-[#00aaff]/30 bg-[#1e1e1e] p-6 shadow-lg shadow-[#00aaff]/10">
-			{/* Image (si dispo) */}
-			{news.image && (
+			{/* Image (si présente) */}
+			{imageUrl && (
 				<img
-					src={news.image}
+					src={imageUrl}
 					alt={news.title}
 					className="w-full h-32 object-cover rounded-md mb-4"
+					loading="lazy"
 				/>
 			)}
 
@@ -56,7 +61,7 @@ export default function HomeActu({ news, onOpen }: Props) {
 			{/* Titre */}
 			<h3 className="text-white font-bold text-lg mb-1">{news.title}</h3>
 
-			{/* Aperçu texte nettoyé */}
+			{/* Aperçu */}
 			<p className="text-gray-400 text-sm mb-2 line-clamp-3">{preview}</p>
 
 			{/* Date */}
@@ -72,5 +77,5 @@ export default function HomeActu({ news, onOpen }: Props) {
 				Voir plus →
 			</button>
 		</div>
-	);
+	)
 }

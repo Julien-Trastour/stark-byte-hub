@@ -1,17 +1,20 @@
 import express from 'express';
-import {
+import { requireSession } from '../middlewares/session.middleware.js';
+import { hasPermission } from '../middlewares/hasPermission.middleware.js';
+import userController from '../controllers/user.controller.js';
+
+const router = express.Router();
+
+const {
   getAllUsers,
   getUserById,
+  createUser,
   updateUser,
   deleteUser,
   getMe,
   updateOwnProfile,
   updatePassword,
-} from '../controllers/user.controller.js';
-import { requireSession } from '../middlewares/session.middleware.js';
-import { hasPermission } from '../middlewares/hasPermission.middleware.js';
-
-const router = express.Router();
+} = userController;
 
 /**
  * @swagger
@@ -20,6 +23,7 @@ const router = express.Router();
  *   description: Gestion des utilisateurs
  */
 
+// 🔐 Authentification requise pour tout
 router.use(requireSession);
 
 /**
@@ -116,7 +120,7 @@ router.get('/', hasPermission('view_users'), getAllUsers);
  * @swagger
  * /users/{id}:
  *   get:
- *     summary: Récupère un utilisateur par ID (requiert la permission "view_users")
+ *     summary: Récupère un utilisateur par ID
  *     tags: [Users]
  *     security:
  *       - cookieAuth: []
@@ -138,9 +142,39 @@ router.get('/:id', hasPermission('view_users'), getUserById);
 
 /**
  * @swagger
+ * /users:
+ *   post:
+ *     summary: Crée un utilisateur (admin uniquement)
+ *     tags: [Users]
+ *     security:
+ *       - cookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [firstName, lastName, email, roleId]
+ *             properties:
+ *               firstName: { type: string }
+ *               lastName: { type: string }
+ *               email: { type: string }
+ *               roleId: { type: string }
+ *     responses:
+ *       201:
+ *         description: Utilisateur créé avec succès
+ *       400:
+ *         description: Champs manquants ou email déjà utilisé
+ *       500:
+ *         description: Erreur serveur
+ */
+router.post('/', hasPermission('edit_users'), createUser);
+
+/**
+ * @swagger
  * /users/{id}:
  *   patch:
- *     summary: Met à jour un utilisateur par ID (requiert la permission "edit_users")
+ *     summary: Met à jour un utilisateur par ID
  *     tags: [Users]
  *     security:
  *       - cookieAuth: []
@@ -164,10 +198,10 @@ router.get('/:id', hasPermission('view_users'), getUserById);
  *     responses:
  *       200:
  *         description: Utilisateur mis à jour
- *       404:
- *         description: Utilisateur non trouvé
  *       403:
- *         description: Permission refusée
+ *         description: Accès interdit
+ *       500:
+ *         description: Erreur serveur
  */
 router.patch('/:id', hasPermission('edit_users'), updateUser);
 
@@ -175,7 +209,7 @@ router.patch('/:id', hasPermission('edit_users'), updateUser);
  * @swagger
  * /users/{id}:
  *   delete:
- *     summary: Supprime un utilisateur par ID (requiert la permission "delete_users")
+ *     summary: Supprime un utilisateur par ID
  *     tags: [Users]
  *     security:
  *       - cookieAuth: []
@@ -188,10 +222,10 @@ router.patch('/:id', hasPermission('edit_users'), updateUser);
  *     responses:
  *       204:
  *         description: Utilisateur supprimé
- *       404:
- *         description: Utilisateur non trouvé
  *       403:
  *         description: Permission refusée
+ *       500:
+ *         description: Erreur serveur
  */
 router.delete('/:id', hasPermission('delete_users'), deleteUser);
 

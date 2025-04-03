@@ -1,5 +1,5 @@
 import swaggerJSDoc from 'swagger-jsdoc';
-import fs from 'fs';
+import fs from 'node:fs';
 import yaml from 'yaml';
 
 const options = {

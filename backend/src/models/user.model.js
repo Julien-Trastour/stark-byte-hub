@@ -1,5 +1,7 @@
 import prisma from '../utils/db.js';
-import { RoleName } from '@prisma/client';
+import pkg from '@prisma/client';
+
+const { Role } = pkg;  // Assurer que c'est bien le modèle Role de Prisma
 
 /**
  * 🔍 Recherche un utilisateur par email
@@ -41,6 +43,15 @@ export const createUser = async ({
   city = null,
   country = null,
 }) => {
+  // S'assurer de l'attribution correcte du rôle
+  const role = await prisma.role.findUnique({
+    where: { name: 'user' }, // On suppose que le rôle est nommé 'user'
+  });
+
+  if (!role) {
+    throw new Error('Le rôle spécifié n\'existe pas');
+  }
+
   return prisma.user.create({
     data: {
       email,
@@ -53,7 +64,7 @@ export const createUser = async ({
       city,
       country,
       role: {
-        connect: { name: RoleName.user }, // rôle par défaut via enum
+        connect: { id: role.id },
       },
     },
   });
