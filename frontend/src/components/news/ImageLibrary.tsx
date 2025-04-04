@@ -1,45 +1,51 @@
-import { useState, useEffect } from "react";
-import { Check, Copy } from "lucide-react";
+import { useState, useEffect } from "react"
+import { Check, Copy } from "lucide-react"
+import { fetchNewsImages } from "../../services/newsService"
 
 interface ImageLibraryProps {
-  onSelectImage: (url: string) => void;
+  onSelectImage: (url: string) => void
 }
 
 const ImageLibrary: React.FC<ImageLibraryProps> = ({ onSelectImage }) => {
-  const [images, setImages] = useState<string[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [images, setImages] = useState<string[]>([])
+  const [loading, setLoading] = useState<boolean>(true)
+  const [selectedImage, setSelectedImage] = useState<string | null>(null)
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     const fetchImages = async () => {
       try {
-        const response = await fetch("/upload/news-images");
-        const data = await response.json();
-        setImages(data.images);
-      } catch (err) {
-        console.error("Erreur lors du chargement des images", err);
-      } finally {
-        setLoading(false);
-      }
-    };
+        const imageList = await fetchNewsImages()
 
-    fetchImages();
-  }, []);
+        // Corrige les URLs si elles ne sont pas absolues
+        const fullUrls = imageList.map((url) =>
+          url.startsWith("http") ? url : `${import.meta.env.VITE_API_URL}${url}`
+        )
+
+        setImages(fullUrls)
+      } catch (err) {
+        console.error("Erreur lors du chargement des images", err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchImages()
+  }, [])
 
   const handleSelect = (url: string) => {
-    setSelectedImage(url);
-    onSelectImage(url);
-    setCopied(false);
-  };
+    setSelectedImage(url)
+    onSelectImage(url)
+    setCopied(false)
+  }
 
   const handleCopy = async () => {
     if (selectedImage) {
-      await navigator.clipboard.writeText(selectedImage);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
+      await navigator.clipboard.writeText(selectedImage)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
     }
-  };
+  }
 
   return (
     <div className="space-y-4">
@@ -56,13 +62,16 @@ const ImageLibrary: React.FC<ImageLibraryProps> = ({ onSelectImage }) => {
               key={image}
               type="button"
               onClick={() => handleSelect(image)}
-              className="w-full h-32 rounded-md overflow-hidden focus:outline-none focus:ring-2 focus:ring-[#00aaff] cursor-pointer"
+              className={`w-full h-32 rounded-md overflow-hidden focus:outline-none focus:ring-2 focus:ring-[#00aaff] cursor-pointer ${
+                selectedImage === image ? "ring-2 ring-[#00aaff]" : ""
+              }`}
               aria-label={`Sélectionner ${image.split("/").pop()}`}
             >
               <img
                 src={image}
                 alt={image.split("/").pop() || `illustration ${index + 1}`}
                 className="w-full h-full object-cover"
+                loading="lazy"
               />
             </button>
           ))}
@@ -105,7 +114,7 @@ const ImageLibrary: React.FC<ImageLibraryProps> = ({ onSelectImage }) => {
         </div>
       )}
     </div>
-  );
-};
+  )
+}
 
-export default ImageLibrary;
+export default ImageLibrary

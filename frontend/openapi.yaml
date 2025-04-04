@@ -1,0 +1,1258 @@
+openapi: 3.0.0
+info:
+  title: Stark Byte Hub API
+  version: 1.0.0
+  description: Documentation de l’API du backend Stark Byte Hub
+servers:
+  - url: http://localhost:5000
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: token
+  parameters:
+    userId:
+      name: userId
+      in: query
+      description: Filtrer par ID utilisateur
+      required: false
+      schema:
+        type: string
+    ip:
+      name: ip
+      in: query
+      description: Filtrer par adresse IP
+      required: false
+      schema:
+        type: string
+    since:
+      name: since
+      in: query
+      description: Date de début (ISO 8601)
+      required: false
+      schema:
+        type: string
+        format: date-time
+    until:
+      name: until
+      in: query
+      description: Date de fin (ISO 8601)
+      required: false
+      schema:
+        type: string
+        format: date-time
+    take:
+      name: take
+      in: query
+      description: Nombre d’éléments à retourner (pagination)
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+    skip:
+      name: skip
+      in: query
+      description: Nombre d’éléments à ignorer (pagination)
+      required: false
+      schema:
+        type: integer
+        minimum: 0
+    orderBy:
+      name: orderBy
+      in: query
+      description: "Champ de tri (ex. : createdAt, timestamp)"
+      required: false
+      schema:
+        type: string
+    sort:
+      name: sort
+      in: query
+      description: Ordre de tri (asc ou desc)
+      required: false
+      schema:
+        type: string
+        enum:
+          - asc
+          - desc
+paths:
+  /auth/register:
+    post:
+      summary: Inscription d’un nouvel utilisateur
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+                - firstName
+                - lastName
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+                firstName:
+                  type: string
+                lastName:
+                  type: string
+                address:
+                  type: string
+                address2:
+                  type: string
+                zipCode:
+                  type: string
+                city:
+                  type: string
+                country:
+                  type: string
+      responses:
+        "201":
+          description: Utilisateur créé avec succès
+        "400":
+          description: Erreur de validation
+  /auth/login:
+    post:
+      summary: Connexion d’un utilisateur
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        "200":
+          description: Connexion réussie
+        "400":
+          description: Identifiants invalides
+  /auth/logout:
+    post:
+      summary: Déconnexion de l’utilisateur
+      tags:
+        - Auth
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Déconnecté avec succès
+  /auth/me:
+    get:
+      summary: Récupère les informations de l’utilisateur connecté
+      tags:
+        - Auth
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Données utilisateur renvoyées
+        "401":
+          description: Utilisateur non connecté
+  /auth/profile:
+    patch:
+      summary: Met à jour les informations de profil de l’utilisateur connecté
+      tags:
+        - Auth
+      security:
+        - cookieAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                address:
+                  type: string
+                address2:
+                  type: string
+                zipCode:
+                  type: string
+                city:
+                  type: string
+                country:
+                  type: string
+      responses:
+        "200":
+          description: Profil mis à jour
+        "401":
+          description: Non autorisé
+  /auth/password:
+    patch:
+      summary: Change le mot de passe de l’utilisateur connecté
+      tags:
+        - Auth
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - currentPassword
+                - newPassword
+              properties:
+                currentPassword:
+                  type: string
+                newPassword:
+                  type: string
+      responses:
+        "200":
+          description: Mot de passe mis à jour
+        "400":
+          description: Mot de passe actuel incorrect
+        "401":
+          description: Non autorisé
+  /auth/forgot-password:
+    post:
+      summary: Envoie un email de réinitialisation de mot de passe
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+      responses:
+        "200":
+          description: Email envoyé
+  /auth/reset-password:
+    post:
+      summary: Réinitialise le mot de passe à l’aide d’un token
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - token
+                - newPassword
+              properties:
+                token:
+                  type: string
+                newPassword:
+                  type: string
+      responses:
+        "200":
+          description: Mot de passe réinitialisé avec succès
+        "400":
+          description: Token invalide ou expiré
+  /download/firmwares:
+    get:
+      summary: Liste les firmwares disponibles
+      tags:
+        - Download
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Liste des fichiers firmware
+  /download/firmwares/{filename}:
+    get:
+      summary: Télécharge un fichier firmware
+      tags:
+        - Download
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: filename
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Nom du fichier firmware
+      responses:
+        "200":
+          description: Fichier téléchargé
+        "404":
+          description: Fichier introuvable
+  /download/robots.csv:
+    get:
+      summary: Export CSV des robots
+      tags:
+        - Download
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Fichier CSV généré
+        "403":
+          description: Permission refusée
+  /logs/login:
+    get:
+      summary: Liste les logs de connexion utilisateur
+      tags:
+        - Logs
+      security:
+        - cookieAuth: []
+    delete:
+      summary: Supprime tous les logs de connexion
+      tags:
+        - Logs
+      security:
+        - cookieAuth: []
+  /logs/stats:
+    get:
+      summary: Statistiques d’activité de connexion
+      tags:
+        - Logs
+      security:
+        - cookieAuth: []
+  /logs/login/{id}:
+    delete:
+      summary: Supprime un log de connexion par ID
+      tags:
+        - Logs
+      security:
+        - cookieAuth: []
+  /logs/audit:
+    get:
+      summary: Liste les logs d’audit (actions utilisateurs)
+      tags:
+        - Logs
+      security:
+        - cookieAuth: []
+    delete:
+      summary: Supprime tous les logs d’audit
+      tags:
+        - Logs
+      security:
+        - cookieAuth: []
+  /logs/audit/{id}:
+    get:
+      summary: Récupère un log d’audit par ID
+      tags:
+        - Logs
+      security:
+        - cookieAuth: []
+    delete:
+      summary: Supprime un log d’audit par ID
+      tags:
+        - Logs
+      security:
+        - cookieAuth: []
+  /logs/robot:
+    get:
+      summary: Liste les logs des robots
+      tags:
+        - Logs
+      security:
+        - cookieAuth: []
+    delete:
+      summary: Supprime tous les logs robot
+      tags:
+        - Logs
+      security:
+        - cookieAuth: []
+  /logs/robot/{id}:
+    get:
+      summary: Récupère un log robot par ID
+      tags:
+        - Logs
+      security:
+        - cookieAuth: []
+    delete:
+      summary: Supprime un log robot par ID
+      tags:
+        - Logs
+      security:
+        - cookieAuth: []
+  /modules:
+    get:
+      summary: Liste tous les modules disponibles dans le système
+      tags:
+        - Modules
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Liste des modules
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+                    description:
+                      type: string
+  /modules/enabled:
+    get:
+      summary: Liste des modules activés pour l'utilisateur connecté
+      tags:
+        - Modules
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Modules activés
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+  /modules/{id}/enable:
+    patch:
+      summary: Active un module pour l'utilisateur connecté
+      tags:
+        - Modules
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: id
+          description: ID du module à activer
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Module activé avec succès
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  module:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      name:
+                        type: string
+        "404":
+          description: Module non trouvé
+  /modules/{id}/disable:
+    patch:
+      summary: Désactive un module pour l'utilisateur connecté
+      tags:
+        - Modules
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: id
+          description: ID du module à désactiver
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Module désactivé avec succès
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  module:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      name:
+                        type: string
+        "404":
+          description: Module non trouvé
+  /news:
+    get:
+      summary: Liste toutes les actualités
+      tags:
+        - News
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Liste des actualités
+        "403":
+          description: Permission refusée
+    post:
+      summary: Crée une nouvelle actualité
+      tags:
+        - News
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - description
+              properties:
+                title:
+                  type: string
+                  example: Nouvelle mise à jour disponible
+                description:
+                  type: string
+                  example: Une nouvelle version du firmware est disponible...
+                tags:
+                  type: array
+                  items:
+                    type: string
+                  example:
+                    - mise à jour
+                    - firmware
+                date:
+                  type: string
+                  format: date
+                  example: 2025-04-04
+                images:
+                  type: array
+                  items:
+                    type: string
+                  example:
+                    - /uploads/news/image1.png
+                coverImageId:
+                  type: string
+                  nullable: true
+      responses:
+        "201":
+          description: Actualité créée
+        "400":
+          description: Données invalides
+        "403":
+          description: Permission refusée
+  /news/{id}:
+    get:
+      summary: Détail d’une actualité
+      tags:
+        - News
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: ID de l’actualité
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Actualité trouvée
+        "403":
+          description: Permission refusée
+        "404":
+          description: Actualité non trouvée
+    patch:
+      summary: Met à jour une actualité existante
+      tags:
+        - News
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: ID de l’actualité
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                tags:
+                  type: array
+                  items:
+                    type: string
+                date:
+                  type: string
+                  format: date
+                images:
+                  type: array
+                  items:
+                    type: string
+                coverImageId:
+                  type: string
+                  nullable: true
+      responses:
+        "200":
+          description: Actualité mise à jour
+        "403":
+          description: Permission refusée
+        "404":
+          description: Actualité non trouvée
+    delete:
+      summary: Supprime une actualité
+      tags:
+        - News
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: ID de l’actualité
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Actualité supprimée
+        "403":
+          description: Permission refusée
+        "404":
+          description: Actualité non trouvée
+  /permissions:
+    get:
+      summary: Liste toutes les permissions
+      tags:
+        - Permissions
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Liste des permissions
+        "403":
+          description: Permission refusée
+    post:
+      summary: Crée une nouvelle permission
+      tags:
+        - Permissions
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  description: Nom unique de la permission
+      responses:
+        "201":
+          description: Permission créée avec succès
+        "400":
+          description: Données invalides
+        "403":
+          description: Permission refusée
+  /permissions/{id}:
+    get:
+      summary: Détail d’une permission
+      tags:
+        - Permissions
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID de la permission
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Permission trouvée
+        "403":
+          description: Permission refusée
+        "404":
+          description: Permission introuvable
+    patch:
+      summary: Met à jour une permission
+      tags:
+        - Permissions
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID de la permission
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: Nouveau nom de la permission
+      responses:
+        "200":
+          description: Permission mise à jour
+        "400":
+          description: Données invalides
+        "403":
+          description: Permission refusée
+        "404":
+          description: Permission introuvable
+    delete:
+      summary: Supprime une permission
+      tags:
+        - Permissions
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID de la permission
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Permission supprimée
+        "403":
+          description: Permission refusée
+        "404":
+          description: Permission introuvable
+  /robots:
+    get:
+      summary: Liste des robots liés à l'utilisateur connecté
+      tags:
+        - Robots
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Liste des robots liés à l'utilisateur
+    post:
+      summary: Créer un nouveau robot
+      tags:
+        - Robots
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - serialNumber
+                - linkKey
+                - model
+                - firmware
+                - color
+                - controllable
+              properties:
+                serialNumber:
+                  type: string
+                linkKey:
+                  type: string
+                model:
+                  type: string
+                firmware:
+                  type: string
+                color:
+                  type: string
+                controllable:
+                  type: boolean
+      responses:
+        "201":
+          description: Robot créé
+        "403":
+          description: Accès refusé
+  /robots/all:
+    get:
+      summary: Liste de tous les robots en base
+      tags:
+        - Robots
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Liste complète des robots
+        "403":
+          description: Permission refusée
+  /robots/link:
+    post:
+      summary: Lier un robot existant à l'utilisateur
+      tags:
+        - Robots
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - serialNumber
+                - linkKey
+                - name
+              properties:
+                serialNumber:
+                  type: string
+                  example: SBA-MX-V1-24040189
+                linkKey:
+                  type: string
+                  example: ABC123XYZ
+                name:
+                  type: string
+                  example: "Arachnobot #1"
+      responses:
+        "200":
+          description: Robot lié avec succès
+        "400":
+          description: Clé ou numéro de série invalide
+  /robots/import:
+    post:
+      summary: Importer plusieurs robots depuis un fichier CSV
+      tags:
+        - Robots
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "201":
+          description: Robots importés
+        "400":
+          description: Format de fichier invalide
+        "403":
+          description: Permission refusée
+  /robots/{id}:
+    get:
+      summary: Récupère un robot par ID
+      tags:
+        - Robots
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+      responses:
+        "200":
+          description: Robot trouvé
+        "403":
+          description: Accès refusé
+        "404":
+          description: Robot introuvable
+    put:
+      summary: Met à jour un robot existant
+      tags:
+        - Robots
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                firmware:
+                  type: string
+                color:
+                  type: string
+                controllable:
+                  type: boolean
+      responses:
+        "200":
+          description: Robot mis à jour
+        "403":
+          description: Accès refusé
+        "404":
+          description: Robot introuvable
+    delete:
+      summary: Supprime un robot
+      tags:
+        - Robots
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Robot supprimé
+        "403":
+          description: Accès refusé
+        "404":
+          description: Robot introuvable
+  /roles:
+    get:
+      summary: Liste tous les rôles
+      tags:
+        - Roles
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Liste des rôles
+        "403":
+          description: Permission refusée
+    post:
+      summary: Crée un nouveau rôle
+      tags:
+        - Roles
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - permissions
+              properties:
+                name:
+                  type: string
+                  description: Nom du rôle
+                permissions:
+                  type: array
+                  description: Liste des permissions associées
+                  items:
+                    type: string
+      responses:
+        "201":
+          description: Rôle créé
+        "400":
+          description: Données invalides ou rôle existant
+        "403":
+          description: Permission refusée
+  /roles/{id}:
+    get:
+      summary: Récupère un rôle par ID
+      tags:
+        - Roles
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Rôle trouvé
+        "403":
+          description: Permission refusée
+        "404":
+          description: Rôle introuvable
+    patch:
+      summary: Met à jour un rôle
+      tags:
+        - Roles
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: Nouveau nom du rôle
+                permissions:
+                  type: array
+                  description: Nouvelle liste des permissions
+                  items:
+                    type: string
+      responses:
+        "200":
+          description: Rôle mis à jour
+        "400":
+          description: Données manquantes
+        "403":
+          description: Permission refusée
+        "404":
+          description: Rôle introuvable
+    delete:
+      summary: Supprime un rôle
+      tags:
+        - Roles
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Rôle supprimé
+        "400":
+          description: Rôle utilisé par des utilisateurs
+        "403":
+          description: Permission refusée
+        "404":
+          description: Rôle introuvable
+  /upload/robot-image:
+    post:
+      summary: Upload d’image pour un robot
+      tags:
+        - Uploads
+      security:
+        - cookieAuth: []
+  /upload/news-image:
+    post:
+      summary: Upload d’image pour une actualité (éditeur Markdown)
+      tags:
+        - Uploads
+      security:
+        - cookieAuth: []
+  /upload/news-images:
+    get:
+      summary: Liste les images uploadées pour les actualités
+      tags:
+        - Uploads
+      security:
+        - cookieAuth: []
+  /upload/firmware:
+    post:
+      summary: Upload d’un fichier firmware (.bin, .hex, .zip)
+      tags:
+        - Uploads
+      security:
+        - cookieAuth: []
+  /users:
+    get:
+      summary: Récupère la liste de tous les utilisateurs
+      tags:
+        - Users
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Liste des utilisateurs
+    post:
+      summary: Crée un nouvel utilisateur (admin uniquement)
+      tags:
+        - Users
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - firstName
+                - lastName
+                - email
+                - roleId
+              properties:
+                firstName:
+                  type: string
+                lastName:
+                  type: string
+                email:
+                  type: string
+                roleId:
+                  type: string
+      responses:
+        "201":
+          description: Utilisateur créé
+  /users/{id}:
+    get:
+      summary: Récupère un utilisateur par son ID
+      tags:
+        - Users
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Utilisateur trouvé
+        "404":
+          description: Utilisateur non trouvé
+    patch:
+      summary: Met à jour un utilisateur (admin uniquement)
+      tags:
+        - Users
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                firstName:
+                  type: string
+                lastName:
+                  type: string
+                email:
+                  type: string
+                roleId:
+                  type: string
+      responses:
+        "200":
+          description: Utilisateur mis à jour
+    delete:
+      summary: Supprime un utilisateur
+      tags:
+        - Users
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Utilisateur supprimé
+  /users/me:
+    patch:
+      summary: Met à jour le profil de l’utilisateur connecté
+      tags:
+        - Users
+      security:
+        - cookieAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                address:
+                  type: string
+                address2:
+                  type: string
+                zipCode:
+                  type: string
+                city:
+                  type: string
+                country:
+                  type: string
+      responses:
+        "200":
+          description: Profil mis à jour
+  /users/password:
+    patch:
+      summary: Change le mot de passe de l’utilisateur connecté
+      tags:
+        - Users
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - currentPassword
+                - newPassword
+              properties:
+                currentPassword:
+                  type: string
+                newPassword:
+                  type: string
+      responses:
+        "200":
+          description: Mot de passe mis à jour
+        "401":
+          description: Mot de passe actuel incorrect
+tags:
+  - name: Auth
+    description: Authentification, session et gestion du profil utilisateur connecté
+  - name: Download
+    description: Téléchargement de fichiers
+  - name: Logs
+    description: Accès aux journaux système (connexion, audit, robot)
+  - name: Modules
+    description: Gestion des modules activables par l'utilisateur
+  - name: News
+    description: Gestion des actualités publiées dans le hub
+  - name: Permissions
+    description: Gestion des permissions (admin uniquement)
+  - name: Robots
+    description: Gestion des robots physiques et virtuels
+  - name: Roles
+    description: Gestion des rôles et permissions
+  - name: Uploads
+    description: Upload de fichiers (images, firmwares…)
+  - name: Users
+    description: Gestion des utilisateurs (admin uniquement)

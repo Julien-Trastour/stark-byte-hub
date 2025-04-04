@@ -48,7 +48,7 @@ export async function createNews(data: NewsInput): Promise<NewsItem> {
 			'Content-Type': 'application/json',
 		},
 		credentials: 'include',
-		body: JSON.stringify(data),
+		body: JSON.stringify(data), // Inclut coverImageId si défini
 	})
 	const responseData = await res.json()
 
@@ -69,7 +69,7 @@ export async function updateNews(id: string, data: NewsInput): Promise<NewsItem>
 			'Content-Type': 'application/json',
 		},
 		credentials: 'include',
-		body: JSON.stringify(data),
+		body: JSON.stringify(data), // Inclut coverImageId si défini
 	})
 	const responseData = await res.json()
 
@@ -115,4 +115,20 @@ export async function uploadNewsImage(file: File): Promise<{ filename: string }>
 	}
 
 	return data // ex: { filename: "cover-123abc.jpg" }
+}
+
+/**
+ * 📥 Récupérer les images d’actualités disponibles sur le serveur
+ */
+export async function fetchNewsImages(): Promise<string[]> {
+	const res = await fetch(`${BASE_URL}/upload/news-images`, {
+		credentials: 'include',
+	})
+	const data = await res.json()
+
+	if (!res.ok) {
+		throw new Error(data?.error || "Échec du chargement des images")
+	}
+
+	return data.images
 }

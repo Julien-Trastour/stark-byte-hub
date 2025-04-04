@@ -72,8 +72,8 @@ export default function AdminNewsPage() {
         <p className="text-gray-400">Aucune actualité pour le moment.</p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {news.map((news) => {
-            const plainText = news.description
+          {news.map((item) => {
+            const plainText = item.description
               .replace(/^#{1,6}\s+/gm, '')
               .replace(/\*\*(.*?)\*\*/g, '$1')
               .replace(/\*(.*?)\*/g, '$1')
@@ -88,23 +88,28 @@ export default function AdminNewsPage() {
               .trim()
               .slice(0, 300)
 
+            const imageUrl = item.images[0]?.url ?? null
+
             return (
               <div
-                key={news.id}
+                key={item.id}
                 className="rounded-lg border-l-4 border-[#00aaff]/30 bg-[#1e1e1e] p-6 shadow-lg shadow-[#00aaff]/10"
               >
-                {/* Image si présente */}
-                {news.image && (
-                  <img
-                    src={`${import.meta.env.VITE_API_URL}/uploads/news/${news.image}`}
-                    alt={news.title}
-                    className="w-full h-40 object-cover rounded-md mb-4"
-                  />
+                {/* Aperçu image */}
+                {imageUrl && (
+                  <div className="w-full aspect-square mb-4 overflow-hidden rounded-md">
+                    <img
+                      src={imageUrl}
+                      alt={item.title}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  </div>
                 )}
 
                 {/* Tags */}
                 <div className="flex flex-wrap gap-2 mb-2">
-                  {news.tags.map((tag) => (
+                  {item.tags.map((tag) => (
                     <span
                       key={tag}
                       className="capitalize text-xs font-medium text-[#00aaff] bg-[#00aaff]/10 px-2 py-0.5 rounded-full"
@@ -114,11 +119,11 @@ export default function AdminNewsPage() {
                   ))}
                 </div>
 
-                {/* Titre / Extrait */}
-                <h3 className="text-white font-bold text-lg mb-1">{news.title}</h3>
+                {/* Titre & extrait */}
+                <h3 className="text-white font-bold text-lg mb-1">{item.title}</h3>
                 <p className="text-gray-400 text-sm mb-2 line-clamp-3">{plainText}</p>
                 <p className="text-gray-500 text-xs mb-3">
-                  {new Date(news.date).toLocaleDateString('fr-FR')}
+                  {new Date(item.date).toLocaleDateString('fr-FR')}
                 </p>
 
                 {/* Actions */}
@@ -127,7 +132,7 @@ export default function AdminNewsPage() {
                     variant="outline"
                     className="flex-1 text-[#00aaff] border-[#00aaff]/40 hover:bg-[#00aaff] hover:text-black"
                     onClick={() => {
-                      setEditingNews(news)
+                      setEditingNews(item)
                       setModalOpen(true)
                     }}
                   >
@@ -136,7 +141,7 @@ export default function AdminNewsPage() {
                   <Button
                     variant="outline"
                     className="flex-1 text-red-400 border-red-400/40 hover:bg-red-500 hover:text-black"
-                    onClick={() => setConfirmDeleteId(news.id)}
+                    onClick={() => setConfirmDeleteId(item.id)}
                   >
                     <Trash size={14} className="inline-block mr-1" /> Supprimer
                   </Button>
